@@ -1,0 +1,1 @@
+This repo for learning opengl(glfw+glad)
