@@ -33,5 +33,7 @@ int main()
         glfwPollEvents();
     }
 
+    glfwTerminate(); //release resource.
+
     return 0;
 }
