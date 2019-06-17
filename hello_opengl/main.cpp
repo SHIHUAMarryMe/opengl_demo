@@ -10,13 +10,13 @@ extern "C"
 static constexpr int WIDTH{ 800 };
 static constexpr int HEIGHT{ 600 };
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     std::cout << "call back." << std::endl;
     glViewport(0, 0, width, height);
 }
 
-void process_input(GLFWwindow* window)
+static void process_input(GLFWwindow* window)
 {
     if(glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS)
     {
@@ -59,6 +59,8 @@ int main()
     {
         process_input(window);
 
+        glClearColor(0.2, 0.3, 0.3, 0);
+        glClear(GL_COLOR_BUFFER_BIT);
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
