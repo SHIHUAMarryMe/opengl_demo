@@ -12,6 +12,7 @@ message(${CMAKE_CXX_FLAGS})
 
 include_directories("../glad/include")
 include_directories("./stb_image")
+include_directories("../glm")
 
 find_package(glfw3 3.3 REQUIRED)
 find_package(OpenGL REQUIRED)
