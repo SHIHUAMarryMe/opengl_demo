@@ -17,12 +17,11 @@ add_executable(${PROJECT_NAME} main.cpp glad_src/glad.c)
 
 target_link_libraries(${PROJECT_NAME}
     # Boost::system
-    glfw #if do not link glfwxxx.a will: undefined reference to symbol 'pthread_key_delete@@GLIBC_2.2.5'
+    glfw3 #if do not link glfwxxx.a will: undefined reference to symbol 'pthread_key_delete@@GLIBC_2.2.5'
     pthread
     m
     GL
     GLU
-    glfw3
     X11
     Xxf86vm
     Xrandr
