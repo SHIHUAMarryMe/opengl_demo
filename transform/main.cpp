@@ -33,16 +33,11 @@ static constexpr const char *fragmentShaderSource{
     "#version 330 core\n"
     "out vec4 fragmentColor;\n"
     "in vec2 texCoord;\n"
-
-    // texture samplers
     "uniform sampler2D texture1;\n"
     "uniform sampler2D texture2;\n"
     "void main()\n"
     "{\n"
-    // linearly interpolate between both textures (80% container, 20%
-    // awesomeface)
-    "	fragmentColor = mix(texture(texture1, texCoord), texture(texture2, "
-    "texCoord), 0.2);\n"
+    "	fragmentColor = mix(texture(texture1, texCoord), texture(texture2, texCoord), 0.2);\n"
     "}"};
 
 static void processInput(GLFWwindow *window)
@@ -208,7 +203,7 @@ int main()
 
   // load image, create texture and generate mipmaps
   GLint width{}, height{}, nrChannels{};
-  unsigned char *data{stbi_load("./image/container.jpg", &width, &height, &nrChannels, 0)};
+  unsigned char *data{stbi_load("/home/shihua/projects/learn_opengl/transform/image/container.jpg", &width, &height, &nrChannels, 0)};
 
   if (data)
   {
@@ -238,7 +233,7 @@ int main()
   stbi_set_flip_vertically_on_load(true);
 
   // load image, create texture and generate mipmaps
-  data = stbi_load("./image/awsomeface.png", &width, &height, &nrChannels, 0);
+  data = stbi_load("/home/shihua/projects/learn_opengl/transform/image/awesomeface.png", &width, &height, &nrChannels, 0);
 
   if (data)
   {
@@ -295,11 +290,8 @@ int main()
     // camera/view
     glm::mat4 view{1.0f};
     GLfloat radius{45.0f};
-    GLfloat cameraX{std::sin(glfwGetTime()) * radius};
-    GLfloat cameraZ{std::cos(glfwGetTime()) * radius};
-
-    std::cout << "cameraX: " << cameraX << "   "
-              << "cameraZ:  " << cameraZ << std::endl;
+    GLfloat cameraX{static_cast<GLfloat>(std::sin(glfwGetTime())) * radius};
+    GLfloat cameraZ{static_cast<GLfloat>(std::cos(glfwGetTime())) * radius};
 
     view = glm::lookAt(glm::vec3{cameraX, 0.0f, cameraZ}, glm::vec3{.0f, .0f, .0f}, glm::vec3{.0f, 1.0f, .0f});
 
@@ -322,6 +314,8 @@ int main()
       // initialize model(matrix4) in glsl.
       GLint modelLocation{glGetUniformLocation(shaderProgram, "model")};
       glUniformMatrix4fv(modelLocation, 1, GL_FALSE, &model[0][0]);
+
+      glDrawArrays(GL_TRIANGLES, 0, 36);
     }
 
     // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved
