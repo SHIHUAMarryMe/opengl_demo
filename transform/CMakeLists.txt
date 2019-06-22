@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(hello_triangle)
+project(transform)
 
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-ggdb -O2")
 set(CMAKE_CXX_STANDARD 14)
@@ -27,16 +27,16 @@ if(OpenGL_FOUND)
 endif()
 
 
+
 add_executable(${PROJECT_NAME} main.cpp glad_src/glad.c stb_image/stb_image.cpp)
 
 target_link_libraries(${PROJECT_NAME}
     # Boost::system
-    glfw #if do not link glfwxxx.a will: undefined reference to symbol 'pthread_key_delete@@GLIBC_2.2.5'
+    glfw3 #if do not link glfwxxx.a will: undefined reference to symbol 'pthread_key_delete@@GLIBC_2.2.5'
     pthread
     m
     GL
     GLU
-    glfw3
     X11
     Xxf86vm
     Xrandr
