@@ -48,7 +48,6 @@ static constexpr const GLchar *vertexShaderSource{
 static constexpr const GLchar *fragmentShaderSource{
     "#version 330 core\n"
     "out vec4 FragColor;\n"
-
     "in vec2 TexCoord;\n"
 
     // texture samplers
@@ -76,20 +75,31 @@ int main()
 
     // glfw window creation
     // --------------------
-    GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT, "LearnOpenGL", nullptr, nullptr);
+    GLFWwindow *window{glfwCreateWindow(WIDTH, HEIGHT, "LearnOpenGL", nullptr, nullptr)};
     if (window == nullptr)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return -1;
     }
+
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
+    // glad: load all OpenGL function pointers
+    // ---------------------------------------
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        std::cout << "Failed to initialize GLAD" << std::endl;
+        return -1;
+    }
+
+    glEnable(GL_DEPTH_TEST);
 
     GLuint vertexShader{}, fragmentShader{};
     // vertex shader
     vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+    glShaderSource(vertexShader, 1, &vertexShaderSource, nullptr);
     glCompileShader(vertexShader);
 
     GLint success{};
@@ -97,22 +107,22 @@ int main()
     if (!success)
     {
         GLchar infoLog[1024]{};
-        glGetShaderInfoLog(vertexShader, 1024, NULL, infoLog);
+        glGetShaderInfoLog(vertexShader, 1024, nullptr, infoLog);
         std::cout << "ERROR::SHADER_COMPILATION_ERROR of type: "
                   << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
     }
 
     // fragment Shader
     fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+    glShaderSource(fragmentShader, 1, &fragmentShaderSource, nullptr);
     glCompileShader(fragmentShader);
 
     success = 0;
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
     if (!success)
     {
         GLchar infoLog[1024]{};
-        glGetShaderInfoLog(vertexShader, 1024, NULL, infoLog);
+        glGetShaderInfoLog(fragmentShader, 1024, nullptr, infoLog);
         std::cout << "ERROR::SHADER_COMPILATION_ERROR of type: "
                   << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
     }
@@ -181,7 +191,7 @@ int main()
         glm::vec3(1.5f, 0.2f, -1.5f),
         glm::vec3(-1.3f, 1.0f, -1.5f)};
 
-    unsigned int VBO, VAO;
+    GLuint VBO{}, VAO{};
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
 
@@ -213,7 +223,7 @@ int main()
     // load image, create texture and generate mipmaps
     GLint width{}, height{}, nrChannels{};
     stbi_set_flip_vertically_on_load(true); // tell stb_image.h to flip loaded texture's on the y-axis.
-    unsigned char *data = stbi_load("resources/textures/container.jpg", &width, &height, &nrChannels, 0);
+    unsigned char *data = stbi_load("/home/shihua/projects/learn_opengl/camera/image/container.jpg", &width, &height, &nrChannels, 0);
     if (data)
     {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
@@ -228,6 +238,7 @@ int main()
 
     GLuint texture2{};
     glGenTextures(1, &texture2);
+    glBindTexture(GL_TEXTURE_2D, texture2);
     // set the texture wrapping parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -235,7 +246,10 @@ int main()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    data = stbi_load("sssssss", &width, &height, &nrChannels, 0);
+    width = 0;
+    height = 0;
+    nrChannels = 0;
+    data = stbi_load("/home/shihua/projects/learn_opengl/camera/image/awesomeface.png", &width, &height, &nrChannels, 0);
     if (data)
     {
         // note that the awesomeface.png has transparency and thus an alpha channel, so make sure to tell OpenGL the data type is of GL_RGBA
@@ -274,13 +288,13 @@ int main()
         glBindTexture(GL_TEXTURE_2D, texture2);
 
         glUseProgram(programId);
+
         // camera/view transformation
         glm::mat4 view{1.0f}; // make sure to initialize matrix to identity matrix first
         float radius = 10.0f;
         float camX = sin(glfwGetTime()) * radius;
         float camZ = cos(glfwGetTime()) * radius;
         view = glm::lookAt(glm::vec3(camX, 0.0f, camZ), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
         glUniformMatrix4fv(glGetUniformLocation(programId, "view"), 1, GL_FALSE, &view[0][0]);
 
         // render boxes
@@ -291,7 +305,7 @@ int main()
             glm::mat4 model{1.0f};
             model = glm::translate(model, cubePositions[i]);
             float angle = 20.0f * i;
-            model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+            model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.0f, 0.0f));
             glUniformMatrix4fv(glGetUniformLocation(programId, "model"), 1, GL_FALSE, &model[0][0]);
 
             glDrawArrays(GL_TRIANGLES, 0, 36);
