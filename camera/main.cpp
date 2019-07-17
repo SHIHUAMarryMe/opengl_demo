@@ -1,23 +1,51 @@
 
+#include <iostream>
+
+#define GLM_FORCE_CXX14
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-
-#include <iostream>
-
-#include <glm/glm.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 
 #include "stb_image/stb_image.h"
 
 static constexpr GLint WIDTH{800};
 static constexpr GLint HEIGHT{600};
 
+static glm::vec3 cameraPos{0.0f, 0.0f, 3.0f};
+static glm::vec3 cameraFront{0.0f, 0.0f, -1.0f};
+static glm::vec3 cameraUp{0.0f, 1.0f, 0.0f};
+
+// camera
+static float delta_time{0.5f};
+static float last_frame{};
+
 static void processInput(GLFWwindow *window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+
+    float camera_speed{2.5f * delta_time};
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+    {
+        cameraPos += (cameraFront * camera_speed);
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+    {
+        cameraPos -= camera_speed * cameraFront;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+    {
+        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * camera_speed;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * camera_speed;
 }
 
 static void framebuffer_size_callback(GLFWwindow *window, int width,
@@ -291,10 +319,7 @@ int main()
 
         // camera/view transformation
         glm::mat4 view{1.0f}; // make sure to initialize matrix to identity matrix first
-        float radius = 10.0f;
-        float camX = sin(glfwGetTime()) * radius;
-        float camZ = cos(glfwGetTime()) * radius;
-        view = glm::lookAt(glm::vec3(camX, 0.0f, camZ), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
         glUniformMatrix4fv(glGetUniformLocation(programId, "view"), 1, GL_FALSE, &view[0][0]);
 
         // render boxes
