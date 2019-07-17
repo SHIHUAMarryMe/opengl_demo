@@ -19,7 +19,7 @@ static glm::vec3 cameraFront{0.0f, 0.0f, -1.0f};
 static glm::vec3 cameraUp{0.0f, 1.0f, 0.0f};
 
 // camera
-static float delta_time{0.5f};
+static float delta_time{};
 static float last_frame{};
 
 static void processInput(GLFWwindow *window)
@@ -27,7 +27,7 @@ static void processInput(GLFWwindow *window)
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
-    float camera_speed{2.5f * delta_time};
+    float camera_speed{5.0f * delta_time};
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
     {
@@ -304,6 +304,10 @@ int main()
 
     while (!glfwWindowShouldClose(window))
     {
+        float currentFrame{glfwGetTime()};
+        delta_time = currentFrame - last_frame;
+        last_frame = currentFrame;
+
         processInput(window);
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
