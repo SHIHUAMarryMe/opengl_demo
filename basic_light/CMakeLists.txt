@@ -28,7 +28,7 @@ endif()
 
 
 
-add_executable(${PROJECT_NAME} main.cpp glad_src/glad.c stb_image/stb_image.cpp camera.cpp shader_creator.h)
+add_executable(${PROJECT_NAME} main.cpp glad_src/glad.c)
 
 target_link_libraries(${PROJECT_NAME}
     # Boost::system
