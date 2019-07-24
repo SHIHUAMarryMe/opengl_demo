@@ -44,7 +44,7 @@ static constexpr const char *cubeVertexShaderSource{
     "void main()\n"
     "{\n"
     "    FragPos = vec3(model * vec4(aPos, 1.0));\n"
-    "    Normal = aNormal;\n"
+    "    Normal = mat3(transpose(inverse(model))) * aNormal;\n" //transpose(inverse(model)) creatr Normal Matrix.
     "    gl_Position = projection * view * vec4(FragPos, 1.0);\n"
     "}"};
 static constexpr const char *cubeFragmentShaderSource{
@@ -57,6 +57,7 @@ static constexpr const char *cubeFragmentShaderSource{
     "uniform vec3 lightPos;\n"
     "uniform vec3 lightColor;\n"
     "uniform vec3 objectColor;\n"
+    "uniform vec3 viewPos;\n" //camera pos.
 
     "void main()\n"
     "{\n"
@@ -65,13 +66,20 @@ static constexpr const char *cubeFragmentShaderSource{
     "    vec3 ambient = ambientStrength * lightColor;\n"
 
     // diffuse
-    "    vec3 norm = normalize(Normal);\n"
+    "    vec3 normal = normalize(Normal);\n"
     "    vec3 lightDir = normalize(lightPos - FragPos);\n"
-    "    float diff = max(dot(norm, lightDir), 0.0);\n"
+    "    float diff = max(dot(normal, lightDir), 0.0);\n"
     "    vec3 diffuse = diff * lightColor;\n"
 
-    "    vec3 result = (ambient + diffuse) * objectColor;\n"
-    "    FragColor = vec4(result, 1.0);\n"
+    // specular
+    "    float specularStrength = 0.5;\n"
+    "    vec3 viewDir = normalize(viewPos - FragPos);\n"
+    "    vec3 reflectDir = reflect(-lightDir, normal);\n"
+    "    float specularValue = pow(max(dot(viewDir, reflectDir), 0.0), 32);\n"
+    "    vec3 specularVec3 = specularStrength * specularValue * lightColor;\n"
+
+    "    vec3 finalColor = (ambient + diffuse + specularVec3) * objectColor;\n"
+    "    FragColor = vec4(finalColor, 1.0);\n"
     "}"};
 
 static constexpr const char *lampVertexShaderSource{
@@ -89,7 +97,7 @@ static constexpr const char *lampFragmentShaderSource{
     "out vec4 FragColor;\n"
     "void main()\n"
     "{\n"
-    "    FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n" // set alle 4 vector values to 1.0
+    "    FragColor = vec4(1.0);\n" // set alle 4 vector values to 1.0
     "}"};
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
@@ -416,6 +424,9 @@ int main()
 
         GLint lightPosLoc{glGetUniformLocation(cubeProgramId, "lightPos")};
         glUniformMatrix4fv(lightPosLoc, 1, GL_FALSE, &light_pos[0]);
+
+        GLint viewPosLoc{glGetUniformLocation(cubeProgramId, "viewPos")};
+        glUniformMatrix4fv(viewPosLoc, 1, GL_FALSE, &cameraPos[0]);
 
         // view/projection transformations
         glm::mat4 projection{glm::perspective(glm::radians(field_of_view), static_cast<float>(WIDTH) / static_cast<float>(HEIGHT), 0.1f, 100.0f)};
