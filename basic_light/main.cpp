@@ -1,3 +1,4 @@
+
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -88,7 +89,7 @@ static constexpr const char *lampFragmentShaderSource{
     "out vec4 FragColor;\n"
     "void main()\n"
     "{\n"
-    "    FragColor = vec4(1.0);\n" // set alle 4 vector values to 1.0
+    "    FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n" // set alle 4 vector values to 1.0
     "}"};
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
@@ -144,7 +145,7 @@ static void mouse_callback(GLFWwindow *window, double xpos, double ypos)
     lastX = xpos;
     lastY = ypos;
 
-    float sensitivity = 0.1f; // change this value to your liking
+    float sensitivity = 0.05f; // change this value to your liking
     xoffset *= sensitivity;
     yoffset *= sensitivity;
 
@@ -206,6 +207,13 @@ int main()
 
     glfwMakeContextCurrent(window);
 
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetScrollCallback(window, scroll_callback);
+
+    // tell GLFW to capture our mouse
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
     // glad: load all OpenGL function pointers
     // ---------------------------------------
     if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
@@ -213,11 +221,6 @@ int main()
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
-
-    glfwMakeContextCurrent(window);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    glfwSetCursorPosCallback(window, mouse_callback);
-    glfwSetScrollCallback(window, scroll_callback);
 
     // configure global opengl state
     // -----------------------------
@@ -236,7 +239,7 @@ int main()
     if (!success)
     {
         GLchar infoLog[1024]{};
-        glGetShaderInfoLog(cubeVertexShader, 1024, NULL, infoLog);
+        glGetShaderInfoLog(cubeVertexShader, 1024, nullptr, infoLog);
         std::cout << "ERROR::SHADER_COMPILATION_ERROR of type: "
                   << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
     }
@@ -265,7 +268,7 @@ int main()
     if (!success)
     {
         GLchar infoLog[1024]{};
-        glGetProgramInfoLog(cubeFragmentShader, 1024, nullptr, infoLog);
+        glGetProgramInfoLog(cubeProgramId, 1024, nullptr, infoLog);
         std::cout << "ERROR::SHADER_COMPILATION_ERROR of type: "
                   << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
     }
@@ -283,7 +286,7 @@ int main()
     if (!success)
     {
         GLchar infoLog[1024]{};
-        glGetShaderInfoLog(lampVertexShader, 1024, NULL, infoLog);
+        glGetShaderInfoLog(lampVertexShader, 1024, nullptr, infoLog);
         std::cout << "ERROR::SHADER_COMPILATION_ERROR of type: "
                   << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
     }
@@ -367,6 +370,7 @@ int main()
     glGenVertexArrays(1, &cubeVAO);
     glGenBuffers(1, &VBO);
 
+    glBindVertexArray(cubeVAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
@@ -376,12 +380,15 @@ int main()
 
     offset = 3 * sizeof(float);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), reinterpret_cast<void *>(offset));
+    glEnableVertexAttribArray(1);
 
     GLuint lampVAO{};
     glGenVertexArrays(1, &lampVAO);
 
-    offset = 0;
+    glBindVertexArray(lampVAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+    offset = 0;
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), reinterpret_cast<void *>(offset));
     glEnableVertexAttribArray(0);
 
@@ -395,21 +402,23 @@ int main()
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        // input
+        // -----
+        processInput(window);
+
         glUseProgram(cubeProgramId);
 
-        glm::vec3 object_color{1.0f, 0.5f, 0.31f};
         GLint objectColorLoc{glGetUniformLocation(cubeProgramId, "objectColor")};
-        glUniform3fv(objectColorLoc, 1, &object_color[0]);
+        glUniform3f(objectColorLoc, 1.0f, 0.5f, 0.31f);
 
-        glm::vec3 light_color{1.0f, 1.0f, 1.0f};
         GLint lightColorLoc{glGetUniformLocation(cubeProgramId, "lightColor")};
-        glUniform3fv(lightColorLoc, 1, &light_color[0]);
+        glUniform3f(lightColorLoc, 1.0f, 1.0f, 1.0f);
 
         GLint lightPosLoc{glGetUniformLocation(cubeProgramId, "lightPos")};
         glUniformMatrix4fv(lightPosLoc, 1, GL_FALSE, &light_pos[0]);
 
         // view/projection transformations
-        glm::mat4 projection{glm::perspective(glm::radians(field_of_view), static_cast<float>(WIDTH / HEIGHT), 0.1f, 100.0f)};
+        glm::mat4 projection{glm::perspective(glm::radians(field_of_view), static_cast<float>(WIDTH) / static_cast<float>(HEIGHT), 0.1f, 100.0f)};
         glUniformMatrix4fv(glGetUniformLocation(cubeProgramId, "projection"), 1, GL_FALSE, &projection[0][0]);
 
         // camera/view transformation
@@ -428,11 +437,11 @@ int main()
         // also draw the lamp object
         glUseProgram(lampProgramId);
         glUniformMatrix4fv(glGetUniformLocation(lampProgramId, "projection"), 1, GL_FALSE, &projection[0][0]);
-        glUniformMatrix4fv(glGetUniformLocation(lampProgramId, "view"), 1, GL_FALSE, &projection[0][0]);
+        glUniformMatrix4fv(glGetUniformLocation(lampProgramId, "view"), 1, GL_FALSE, &view[0][0]);
         model = glm::mat4(1.0f);
         model = glm::translate(model, light_pos);
-        model = glm::scale(model, glm::vec3(0.2f)); // a smaller lamp cube
-        glUniformMatrix4fv(glGetUniformLocation(lampProgramId, "model"), 1, GL_FALSE, &projection[0][0]);
+        model = glm::scale(model, glm::vec3(0.3f)); // a smaller lamp cube
+        glUniformMatrix4fv(glGetUniformLocation(lampProgramId, "model"), 1, GL_FALSE, &model[0][0]);
 
         glBindVertexArray(lampVAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
