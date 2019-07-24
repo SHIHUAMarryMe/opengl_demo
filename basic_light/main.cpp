@@ -1,4 +1,5 @@
-
+#define GLM_FORCE_CXX14
+#define GLM_FORCE_INTRINSICS
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -266,7 +267,7 @@ int main()
                   << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
     }
 
-    GLint cubeProgramId{glCreateProgram()};
+    GLuint cubeProgramId{glCreateProgram()};
     glAttachShader(cubeProgramId, cubeVertexShader);
     glAttachShader(cubeProgramId, cubeFragmentShader);
     glLinkProgram(cubeProgramId);
@@ -313,7 +314,7 @@ int main()
                   << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
     }
 
-    GLint lampProgramId{glCreateProgram()};
+    GLuint lampProgramId{glCreateProgram()};
     glAttachShader(lampProgramId, lampVertexShader);
     glAttachShader(lampProgramId, lampFragmentShader);
     glLinkProgram(lampProgramId);
