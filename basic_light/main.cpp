@@ -423,10 +423,10 @@ int main()
         glUniform3f(lightColorLoc, 1.0f, 1.0f, 1.0f);
 
         GLint lightPosLoc{glGetUniformLocation(cubeProgramId, "lightPos")};
-        glUniformMatrix4fv(lightPosLoc, 1, GL_FALSE, &light_pos[0]);
+        glUniform3fv(lightPosLoc, 1, &light_pos[0]);
 
         GLint viewPosLoc{glGetUniformLocation(cubeProgramId, "viewPos")};
-        glUniformMatrix4fv(viewPosLoc, 1, GL_FALSE, &cameraPos[0]);
+        glUniform3fv(viewPosLoc, 1, &cameraPos[0]);
 
         // view/projection transformations
         glm::mat4 projection{glm::perspective(glm::radians(field_of_view), static_cast<float>(WIDTH) / static_cast<float>(HEIGHT), 0.1f, 100.0f)};
