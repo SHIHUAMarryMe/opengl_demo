@@ -49,6 +49,7 @@ static constexpr const char *cubeVertexShaderSource{
     "void main()\n"
     "{\n"
     "    FragPos = vec3(model * vec4(aPos, 1.0));\n"
+    "    TexCoords = aTexCoords;\n"
 
     // must use Normal Matrix, it can keep NU Scale right.
     "    Normal = mat3(transpose(inverse(model))) * aNormal;\n" //transpose(inverse(model)) creatr Normal Matrix.
@@ -61,7 +62,7 @@ static constexpr const char *cubeFragmentShaderSource{
 
     "in vec3 Normal;\n"
     "in vec3 FragPos;\n"
-    "in vec3 TexCoords;\n"
+    "in vec2 TexCoords;\n"
 
     "struct Material\n"
     "{\n"
@@ -87,19 +88,19 @@ static constexpr const char *cubeFragmentShaderSource{
     "{\n"
 
     // ambient
-    "vec3 ambientVec = texture(material.diffuse_, TexCoords).rgb * light.ambient_;\n"
+    "vec3 ambientVec = light.ambient_ * texture(material.diffuse_, TexCoords).rgb;\n"
 
     // diffuse
     "    vec3 normal = normalize(Normal);\n"
     "    vec3 lightDir = normalize(light.position_ - FragPos);\n"
     "    float diffuseValue = max(dot(normal, lightDir), 0.0);\n"
-    "    vec3 diffuseVec = light.diffuse_ * texture(material.diffuse_, TexCoords).rgb * diffuseValue; \n"
+    "    vec3 diffuseVec = light.diffuse_  * diffuseValue * texture(material.diffuse_, TexCoords).rgb; \n"
 
     // specular
     "    vec3 viewDir = normalize(cameraPos - FragPos);\n"
     "    vec3 reflectDir = reflect(-lightDir, normal);\n"
     "    float specularValue = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess_);\n"
-    "    vec3 specularVec = light.specular_ * texture(material.specular_, TexCoords).rgb * specularValue; \n"
+    "    vec3 specularVec = light.specular_ * (material.specular_ * specularValue); \n"
 
     "    vec3 finalColor = ambientVec + diffuseVec + specularVec; \n"
     "    FragColor = vec4(finalColor, 1.0);\n"
@@ -176,7 +177,7 @@ static void mouse_callback(GLFWwindow *window, double xpos, double ypos)
   lastX = xpos;
   lastY = ypos;
 
-  float sensitivity = 0.05f; // change this value to your liking
+  float sensitivity = 0.02f; // change this value to your liking
   xoffset *= sensitivity;
   yoffset *= sensitivity;
 
@@ -407,12 +408,16 @@ int main()
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
   GLint offset{0};
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), reinterpret_cast<void *>(offset));
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), reinterpret_cast<void *>(offset));
   glEnableVertexAttribArray(0);
 
   offset = 3 * sizeof(float);
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), reinterpret_cast<void *>(offset));
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), reinterpret_cast<void *>(offset));
   glEnableVertexAttribArray(1);
+
+  offset = 6 * sizeof(float);
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), reinterpret_cast<void *>(offset));
+  glEnableVertexAttribArray(2);
 
   GLuint lampVAO{};
   glGenVertexArrays(1, &lampVAO);
@@ -421,14 +426,16 @@ int main()
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
   offset = 0;
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), reinterpret_cast<void *>(offset));
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), reinterpret_cast<void *>(offset));
   glEnableVertexAttribArray(0);
 
   GLuint textureID{};
   glGenTextures(1, &textureID);
 
   int width{}, height{}, nrComponents{};
-  unsigned char *data{stbi_load("", &width, &height, &nrComponents, 0)};
+  unsigned char *data{stbi_load("/home/shihua/projects/learn_opengl/lightmapping/image/container2.png",
+                                &width, &height, &nrComponents, 0)};
+
   if (data)
   {
     GLenum format{};
@@ -443,8 +450,11 @@ int main()
     glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
 
+    // set texture wrapper.
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    // set texture filter.
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -452,11 +462,15 @@ int main()
   }
   else
   {
-    std::cout << "Texture failed to load at path: " << path << std::endl;
+    std::cerr << "the path of image is wrong." << std::endl;
     stbi_image_free(data);
   }
 
   data = nullptr;
+
+  glUseProgram(cubeProgramId);
+  GLint texture1Id{glGetUniformLocation(cubeProgramId, "material.diffuse_")};
+  glUniform1i(texture1Id, 0);
 
   while (!glfwWindowShouldClose(window))
   {
@@ -472,22 +486,21 @@ int main()
     // -----
     processInput(window);
 
-    glUseProgram(cubeProgramId);
+    // bind textures to specify uniform.
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, textureID);
 
-    GLint lightPosLoc{glGetUniformLocation(cubeProgramId, "light.position_")};
-    glUniform3fv(lightPosLoc, 1, &light_pos[0]);
+    glUseProgram(cubeProgramId);
 
     GLint viewPosLoc{glGetUniformLocation(cubeProgramId, "cameraPos")};
     glUniform3fv(viewPosLoc, 1, &cameraPos[0]);
 
-    // light properties
-    glm::vec3 lightColor{};
-    lightColor.x = std::sin(glfwGetTime() * 2.0f);
-    lightColor.y = std::sin(glfwGetTime() * 0.7f);
-    lightColor.z = std::sin(glfwGetTime() * 1.3f);
+    glm::vec3 lightAmbientColor{0.2f, 0.2f, 0.2f};
+    glm::vec3 lightDiffuseColor{0.5f, 0.5f, 0.5f};
+    glm::vec3 lightSpecularColor{1.0f, 1.0f, 1.0f};
 
-    glm::vec3 lightDiffuseColor{lightColor * glm::vec3(0.5f)};        // decrease the influence
-    glm::vec3 lightAmbientColor{lightDiffuseColor * glm::vec3(0.2f)}; // low influence
+    GLint lightPosLoc{glGetUniformLocation(cubeProgramId, "light.position_")};
+    glUniform3fv(lightPosLoc, 1, &light_pos[0]);
 
     GLint lightAmbientLoc{glGetUniformLocation(cubeProgramId, "light.ambient_")};
     glUniform3fv(lightAmbientLoc, 1, &lightAmbientColor[0]);
@@ -495,24 +508,15 @@ int main()
     GLint lightDiffuseLoc{glGetUniformLocation(cubeProgramId, "light.diffuse_")};
     glUniform3fv(lightDiffuseLoc, 1, &lightDiffuseColor[0]);
 
-    glm::vec3 lightSpecularColor{1.0, 1.0, 1.0};
     GLint lightSpecularLoc{glGetUniformLocation(cubeProgramId, "light.specular_")};
     glUniform3fv(lightSpecularLoc, 1, &lightSpecularColor[0]);
-
-    glm::vec3 diffuseColor{lightColor * glm::vec3(0.5f)};   // decrease the influence
-    glm::vec3 ambientColor{diffuseColor * glm::vec3(0.2f)}; // low influence
-
-    glm::vec3 materialAmbientColor{.0f, 0.5f, 0.31f};
-    GLint materialAmbientLoc{glGetUniformLocation(cubeProgramId, "material.ambient_")};
-    glUniform3fv(materialAmbientLoc, 1, &ambientColor[0]);
-
-    glm::vec3 materialDiffuseColor{1.0f, 0.5f, 0.31f};
-    GLint materialDiffuseLoc{glGetUniformLocation(cubeProgramId, "material.diffuse_")};
-    glUniform3fv(materialDiffuseLoc, 1, &materialDiffuseColor[0]);
 
     glm::vec3 materialSpecularColor{0.5f, 0.5f, 0.5f};
     GLint materialSpecularLoc{glGetUniformLocation(cubeProgramId, "material.specular_")};
     glUniform3fv(materialSpecularLoc, 1, &materialSpecularColor[0]);
+
+    GLint materialShininessLoc{glGetUniformLocation(cubeProgramId, "material.shininess_")};
+    glUniform1i(materialShininessLoc, 64.0f);
 
     // view/projection transformations
     glm::mat4 projection{glm::perspective(glm::radians(field_of_view), static_cast<float>(WIDTH) / static_cast<float>(HEIGHT), 0.1f, 100.0f)};
@@ -530,6 +534,8 @@ int main()
     // render the cube
     glBindVertexArray(cubeVAO);
     glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    //==========================================================
 
     // also draw the lamp object
     glUseProgram(lampProgramId);
