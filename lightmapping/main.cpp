@@ -106,17 +106,17 @@ static constexpr const char *cubeFragmentShaderSource{
     "{\n"
 
     // ambient
-    "vec3 ambientVec = light.ambient_ * texture(material.diffuse_, TexCoords).rgb;\n"
+    "    vec3 ambientVec = light.ambient_ * texture(material.diffuse_, TexCoords).rgb;\n"
 
     // diffuse
-    "    vec3 normal = normalize(Normal);\n"
+    "    vec3 normalVec = normalize(Normal);\n"
     "    vec3 lightDir = normalize(light.position_ - FragPos);\n"
-    "    float diffuseValue = max(dot(normal, lightDir), 0.0);\n"
+    "    float diffuseValue = max(dot(normalVec, lightDir), 0.0);\n"
     "    vec3 diffuseVec = light.diffuse_  * diffuseValue * texture(material.diffuse_, TexCoords).rgb; \n"
 
     // specular
     "    vec3 viewDir = normalize(cameraPos - FragPos);\n"
-    "    vec3 reflectDir = reflect(-lightDir, normal);\n"
+    "    vec3 reflectDir = reflect(-lightDir, normalVec);\n"
     "    float specularValue = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess_);\n"
     "    vec3 specularVec = light.specular_ * (material.specular_ * specularValue);\n"
 
