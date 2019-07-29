@@ -19,8 +19,10 @@ static const glm::vec3 light_pos{1.2f, 1.0f, 2.0f};
 
 // camera
 static glm::vec3 cameraPos{0.0f, 0.0f, 3.0f};
-static glm::vec3 cameraFront{0.0f, 0.0f, -1.0f};
+static glm::vec3 cameraFront{};
 static glm::vec3 cameraUp{0.0f, 1.0f, 0.0f};
+static glm::vec3 cameraRight{};
+static glm::vec3 worldUp = cameraUp;
 static float delta_time{};
 static float last_frame{};
 
@@ -29,8 +31,24 @@ static float field_of_view{45.0f};
 static bool firstMouse{true};
 static float lastX{WIDTH / 2.f};
 static float lastY{HEIGHT / 2.f};
-static float pitch{};
+static float pitch{0.0f};
 static float yaw{-90.f};
+static float speed{2.5f};
+static float sensitivity{0.05f};
+
+static void updateCameraVectors()
+{
+  // Calculate the new Front vector
+  glm::vec3 front{};
+  front.x = std::cos(glm::radians(yaw)) * std::cos(glm::radians(pitch));
+  front.y = std::sin(glm::radians(pitch));
+  front.z = std::sin(glm::radians(yaw)) * std::cos(glm::radians(pitch));
+  cameraFront = glm::normalize(front);
+
+  // Also re-calculate the Right and Up vector
+  cameraRight = glm::normalize(glm::cross(cameraFront, worldUp)); // Normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
+  cameraUp = glm::normalize(glm::cross(cameraRight, cameraFront));
+}
 
 static constexpr const char *cubeVertexShaderSource{
     "#version 330 core\n"
@@ -100,9 +118,9 @@ static constexpr const char *cubeFragmentShaderSource{
     "    vec3 viewDir = normalize(cameraPos - FragPos);\n"
     "    vec3 reflectDir = reflect(-lightDir, normal);\n"
     "    float specularValue = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess_);\n"
-    "    vec3 specularVec = light.specular_ * (material.specular_ * specularValue); \n"
+    "    vec3 specularVec = light.specular_ * (material.specular_ * specularValue);\n"
 
-    "    vec3 finalColor = ambientVec + diffuseVec + specularVec; \n"
+    "    vec3 finalColor = ambientVec + diffuseVec + specularVec;\n"
     "    FragColor = vec4(finalColor, 1.0);\n"
     "}"};
 
@@ -131,7 +149,7 @@ static void processInput(GLFWwindow *window)
   if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     glfwSetWindowShouldClose(window, true);
 
-  float camera_speed{5.0f * delta_time};
+  float camera_speed{speed * delta_time};
 
   if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
   {
@@ -145,11 +163,11 @@ static void processInput(GLFWwindow *window)
 
   if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
   {
-    cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * camera_speed;
+    cameraPos -= cameraRight * camera_speed;
   }
 
   if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-    cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * camera_speed;
+    cameraPos += cameraRight * camera_speed;
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
@@ -177,7 +195,6 @@ static void mouse_callback(GLFWwindow *window, double xpos, double ypos)
   lastX = xpos;
   lastY = ypos;
 
-  float sensitivity = 0.02f; // change this value to your liking
   xoffset *= sensitivity;
   yoffset *= sensitivity;
 
@@ -190,11 +207,7 @@ static void mouse_callback(GLFWwindow *window, double xpos, double ypos)
   if (pitch < -89.0f)
     pitch = -89.0f;
 
-  glm::vec3 front{};
-  front.x = std::cos(glm::radians(yaw)) * std::cos(glm::radians(pitch));
-  front.y = std::sin(glm::radians(pitch));
-  front.z = std::sin(glm::radians(yaw)) * std::cos(glm::radians(pitch));
-  cameraFront = glm::normalize(front);
+  updateCameraVectors();
 }
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
@@ -215,7 +228,6 @@ static void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
   {
     field_of_view = 45.0f;
   }
-  std::cout << xoffset << "----------->" << yoffset << "   " << field_of_view << std::endl;
 }
 
 int main()
@@ -257,6 +269,9 @@ int main()
   // configure global opengl state
   // -----------------------------
   glEnable(GL_DEPTH_TEST);
+
+  // notice that: count camera front/up/right vectors.
+  updateCameraVectors();
 
   // cube shaders.
   GLuint cubeVertexShader{};
@@ -503,13 +518,16 @@ int main()
     glUniform3fv(lightPosLoc, 1, &light_pos[0]);
 
     GLint lightAmbientLoc{glGetUniformLocation(cubeProgramId, "light.ambient_")};
-    glUniform3fv(lightAmbientLoc, 1, &lightAmbientColor[0]);
+    // glUniform3fv(lightAmbientLoc, 1, &lightAmbientColor[0]);
+    glUniform3f(lightAmbientLoc, 0.2, 0.2, 0.2);
 
     GLint lightDiffuseLoc{glGetUniformLocation(cubeProgramId, "light.diffuse_")};
-    glUniform3fv(lightDiffuseLoc, 1, &lightDiffuseColor[0]);
+    // glUniform3fv(lightDiffuseLoc, 1, &lightDiffuseColor[0]);
+    glUniform3f(lightDiffuseLoc, 0.5, 0.5, 0.5);
 
     GLint lightSpecularLoc{glGetUniformLocation(cubeProgramId, "light.specular_")};
-    glUniform3fv(lightSpecularLoc, 1, &lightSpecularColor[0]);
+    // glUniform3fv(lightSpecularLoc, 1, &lightSpecularColor[0]);
+    glUniform3f(lightSpecularLoc, 1.0, 1.0, 1.0);
 
     glm::vec3 materialSpecularColor{0.5f, 0.5f, 0.5f};
     GLint materialSpecularLoc{glGetUniformLocation(cubeProgramId, "material.specular_")};
