@@ -85,7 +85,7 @@ static constexpr const char *cubeFragmentShaderSource{
     "struct Material\n"
     "{\n"
     "    sampler2D diffuse_;\n" //ambient color is the same with diffuse color, ususally.
-    "    vec3 specular_;\n"
+    "    sampler2D specular_;\n"
     "    float shininess_;\n"
     "};\n"
 
@@ -118,7 +118,7 @@ static constexpr const char *cubeFragmentShaderSource{
     "    vec3 viewDir = normalize(cameraPos - FragPos);\n"
     "    vec3 reflectDir = reflect(-lightDir, normalVec);\n"
     "    float specularValue = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess_);\n"
-    "    vec3 specularVec = light.specular_ * (material.specular_ * specularValue);\n"
+    "    vec3 specularVec = light.specular_ * specularValue * texture(material.specular_, TexCoords).rgb;\n"
 
     "    vec3 finalColor = ambientVec + diffuseVec + specularVec;\n"
     "    FragColor = vec4(finalColor, 1.0);\n"
@@ -483,9 +483,52 @@ int main()
 
   data = nullptr;
 
+  GLuint textureID2{};
+  glGenTextures(1, &textureID2);
+  width = 0;
+  height = 0;
+  nrComponents = 0;
+
+  data = stbi_load("/home/shihua/projects/learn_opengl/lightmapping/image/container2_specular.png",
+                   &width, &height, &nrComponents, 0);
+
+  if (data)
+  {
+    GLenum format{};
+    if (nrComponents == 1)
+      format = GL_RED;
+    else if (nrComponents == 3)
+      format = GL_RGB;
+    else if (nrComponents == 4)
+      format = GL_RGBA;
+
+    glBindTexture(GL_TEXTURE_2D, textureID2);
+    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    // set texture wrapper.
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    // set texture filter.
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    stbi_image_free(data);
+  }
+  else
+  {
+    std::cerr << "the path of image is wrong." << std::endl;
+    stbi_image_free(data);
+  }
+
+  data = nullptr;
+
   glUseProgram(cubeProgramId);
   GLint texture1Id{glGetUniformLocation(cubeProgramId, "material.diffuse_")};
   glUniform1i(texture1Id, 0);
+  GLint texture2Id{glGetUniformLocation(cubeProgramId, "material.specular_")};
+  glUniform1i(texture2Id, 1);
 
   while (!glfwWindowShouldClose(window))
   {
@@ -504,6 +547,9 @@ int main()
     // bind textures to specify uniform.
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, textureID);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, textureID2);
 
     glUseProgram(cubeProgramId);
 
@@ -528,10 +574,6 @@ int main()
     GLint lightSpecularLoc{glGetUniformLocation(cubeProgramId, "light.specular_")};
     // glUniform3fv(lightSpecularLoc, 1, &lightSpecularColor[0]);
     glUniform3f(lightSpecularLoc, 1.0, 1.0, 1.0);
-
-    glm::vec3 materialSpecularColor{0.5f, 0.5f, 0.5f};
-    GLint materialSpecularLoc{glGetUniformLocation(cubeProgramId, "material.specular_")};
-    glUniform3fv(materialSpecularLoc, 1, &materialSpecularColor[0]);
 
     GLint materialShininessLoc{glGetUniformLocation(cubeProgramId, "material.shininess_")};
     glUniform1f(materialShininessLoc, 64.0f);
