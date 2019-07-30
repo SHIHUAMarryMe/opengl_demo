@@ -494,6 +494,9 @@ int main()
         GLint materialSpecularLoc{glGetUniformLocation(cubeProgramId, "material.specular_")};
         glUniform3fv(materialSpecularLoc, 1, &materialSpecularColor[0]);
 
+        GLint materialShininessLoc{glGetUniformLocation(cubeProgramId, "material.shininess_")};
+        glUniform1f(materialShininessLoc, 64.0f);
+
         // view/projection transformations
         glm::mat4 projection{glm::perspective(glm::radians(field_of_view), static_cast<float>(WIDTH) / static_cast<float>(HEIGHT), 0.1f, 100.0f)};
         glUniformMatrix4fv(glGetUniformLocation(cubeProgramId, "projection"), 1, GL_FALSE, &projection[0][0]);
