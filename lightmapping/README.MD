@@ -3,4 +3,4 @@
 
 - because of **GL_TEXTURE1** is black color in middle postions, so **vec3 specularVec = light.specular_ * specularValue * texture(material.specular_, TexCoords).rgb** will be 0(zero).
 
-- so, **middle positions(GL_TEXTURE0)** just has ambient value and diffuse value.
+- so, **middle positions(GL_TEXTURE1)** just has ambient value and diffuse value.
