@@ -93,8 +93,9 @@ static constexpr const char *cubeFragmentShaderSource{
     "{\n"
     // why here are camera_xxx?
     //we are simulating flashlight, so camera is light source.
-    "    vec3 camera_position_;\n"
-    "    vec3 camera_front_;\n"
+    "    vec3  camera_position_;\n"
+    "    vec3  camera_front_;\n"
+    "     vec3  cuttoff_;\n"
 
     "    vec3 ambient_;\n"
     "    vec3 diffuse_;\n"
@@ -107,6 +108,14 @@ static constexpr const char *cubeFragmentShaderSource{
     "uniform vec3 cameraPos;\n" //camera pos.
 
     "void main()\n"
+    "{\n"
+
+    "   vec3 lightDir = normalize(light.camera_position_ - FragPos);\n"
+
+    // check if lighting is inside the spotlight cone
+    "   float thea = dot(lightDir, normalize(-light.camera_front_));\n"
+
+    "if(thea > light.cutoff_)\n"
     "{\n"
 
     // ambient
@@ -127,8 +136,17 @@ static constexpr const char *cubeFragmentShaderSource{
     "    float distance = length(light.position_ - FragPos);\n"
     "    float attenuationValue = 1.0 / (light.constant_ + light.linear_ * distance + light.quadratic_ * (distance * distance));"
 
-    "    vec3 finalColor = (ambientVec + diffuseVec + specularVec)*attenuationValue;\n"
+    // here ambient need not attenuationValue.
+    "    vec3 finalColor = (diffuseVec + specularVec)*attenuationValue;\n"
     "    FragColor = vec4(finalColor, 1.0);\n"
+
+    "}else{\n"
+
+    // else, use ambient light so scene isn't completely dark outside the spotlight.
+    " FragColor = vec4(light.ambient * texture(material.diffuse, TexCoords).rgb, 1.0);\n "
+
+    "}\n"
+
     "}"};
 
 static constexpr const char *lampVertexShaderSource{
