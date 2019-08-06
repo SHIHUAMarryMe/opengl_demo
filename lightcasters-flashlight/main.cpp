@@ -95,11 +95,15 @@ static constexpr const char *cubeFragmentShaderSource{
     //we are simulating flashlight, so camera is light source.
     "    vec3  camera_position_;\n"
     "    vec3  camera_front_;\n"
-    "     vec3  cuttoff_;\n"
+    "     float  cutoff_;\n"
 
     "    vec3 ambient_;\n"
     "    vec3 diffuse_;\n"
     "    vec3 specular_;\n"
+
+    "   float constant_;\n"
+    "   float linear_;\n"
+    "   float quadratic_;\n"
     "};\n"
 
     "uniform Material material;\n"
@@ -123,7 +127,7 @@ static constexpr const char *cubeFragmentShaderSource{
 
     // diffuse
     "    vec3 normalVec = normalize(Normal);\n"
-    "    vec3 lightDir = normalize(light.position_ - FragPos);\n"
+    "    vec3 lightDir = normalize(light.camera_position_ - FragPos);\n"
     "    float diffuseValue = max(dot(normalVec, lightDir), 0.0);\n"
     "    vec3 diffuseVec = light.diffuse_  * diffuseValue * texture(material.diffuse_, TexCoords).rgb; \n"
 
@@ -133,17 +137,17 @@ static constexpr const char *cubeFragmentShaderSource{
     "    float specularValue = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess_);\n"
     "    vec3 specularVec = light.specular_ * specularValue * texture(material.specular_, TexCoords).rgb;\n"
 
-    "    float distance = length(light.position_ - FragPos);\n"
-    "    float attenuationValue = 1.0 / (light.constant_ + light.linear_ * distance + light.quadratic_ * (distance * distance));"
+    "    float distance = length(light.camera_position_ - FragPos);\n"
+    "    float attenuationValue = 1.0 / (light.constant_ + light.linear_ * distance + light.quadratic_ * (distance * distance));\n"
 
     // here ambient need not attenuationValue.
-    "    vec3 finalColor = (diffuseVec + specularVec)*attenuationValue;\n"
+    "    vec3 finalColor = (diffuseVec + specularVec)*attenuationValue  + ambientVec;\n"
     "    FragColor = vec4(finalColor, 1.0);\n"
 
     "}else{\n"
 
     // else, use ambient light so scene isn't completely dark outside the spotlight.
-    " FragColor = vec4(light.ambient * texture(material.diffuse, TexCoords).rgb, 1.0);\n "
+    " FragColor = vec4(light.ambient_ * texture(material.diffuse_, TexCoords).rgb, 1.0);\n "
 
     "}\n"
 
@@ -159,6 +163,7 @@ static constexpr const char *lampVertexShaderSource{
     "{\n"
     "	gl_Position = projection * view * model * vec4(aPos, 1.0);\n"
     "}"};
+
 static constexpr const char *lampFragmentShaderSource{
     "#version 330 core\n"
     "out vec4 FragColor;\n"
@@ -395,7 +400,7 @@ int main()
   // set up vertex data (and buffer(s)) and configure vertex attributes
   // ------------------------------------------------------------------
   const float vertices[]{
-      // positions          // normals        // texture coords
+      // positions          // normals           // texture coords
       -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
       0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f,
       0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f,
@@ -582,14 +587,14 @@ int main()
     // -----
     processInput(window);
 
+    glUseProgram(cubeProgramId);
+
     // bind textures to specify uniform.
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, textureID);
 
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, textureID2);
-
-    glUseProgram(cubeProgramId);
 
     GLint viewPosLoc{glGetUniformLocation(cubeProgramId, "cameraPos")};
     glUniform3fv(viewPosLoc, 1, &cameraPos[0]);
@@ -598,19 +603,22 @@ int main()
     glm::vec3 lightDiffuseColor{0.5f, 0.5f, 0.5f};
     glm::vec3 lightSpecularColor{1.0f, 1.0f, 1.0f};
 
-    GLint lightPosLoc{glGetUniformLocation(cubeProgramId, "light.position_")};
-    glUniform3fv(lightPosLoc, 1, &light_pos[0]);
+    GLint cameraPosLoc{glGetUniformLocation(cubeProgramId, "light.camera_position_")};
+    glUniform3fv(cameraPosLoc, 1, &cameraPos[0]);
+
+    GLint cameraDirectionLoc{glGetUniformLocation(cubeProgramId, "light.camera_front_")};
+    glUniform3fv(cameraDirectionLoc, 1, &cameraFront[0]);
+
+    GLint cutOffLoc{glGetUniformLocation(cubeProgramId, "light.cutoff_")};
+    glUniform1f(cutOffLoc, std::cos(glm::radians(12.5f)));
 
     GLint lightAmbientLoc{glGetUniformLocation(cubeProgramId, "light.ambient_")};
-    // glUniform3fv(lightAmbientLoc, 1, &lightAmbientColor[0]);
-    glUniform3f(lightAmbientLoc, 0.2, 0.2, 0.2);
+    glUniform3f(lightAmbientLoc, 0.1f, 0.1f, 0.1f);
 
     GLint lightDiffuseLoc{glGetUniformLocation(cubeProgramId, "light.diffuse_")};
-    // glUniform3fv(lightDiffuseLoc, 1, &lightDiffuseColor[0]);
-    glUniform3f(lightDiffuseLoc, 0.5, 0.5, 0.5);
+    glUniform3f(lightDiffuseLoc, 0.8f, 0.8f, 0.8f);
 
     GLint lightSpecularLoc{glGetUniformLocation(cubeProgramId, "light.specular_")};
-    // glUniform3fv(lightSpecularLoc, 1, &lightSpecularColor[0]);
     glUniform3f(lightSpecularLoc, 1.0, 1.0, 1.0);
 
     GLint lightConstantLoc{glGetUniformLocation(cubeProgramId, "light.constant_")};
@@ -620,7 +628,7 @@ int main()
     glUniform1f(lightLinearLoc, 0.09f);
 
     GLint lightQuadraticLoc{glGetUniformLocation(cubeProgramId, "light.quadratic_")};
-    glUniform1f(lightQuadraticLoc, 0.32f);
+    glUniform1f(lightQuadraticLoc, 0.032f);
 
     GLint materialShininessLoc{glGetUniformLocation(cubeProgramId, "material.shininess_")};
     glUniform1f(materialShininessLoc, 32.0f);
@@ -652,17 +660,17 @@ int main()
       glDrawArrays(GL_TRIANGLES, 0, 36);
     }
 
-    // also draw the lamp object
-    glUseProgram(lampProgramId);
-    glUniformMatrix4fv(glGetUniformLocation(lampProgramId, "projection"), 1, GL_FALSE, &projection[0][0]);
-    glUniformMatrix4fv(glGetUniformLocation(lampProgramId, "view"), 1, GL_FALSE, &view[0][0]);
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, light_pos);
-    model = glm::scale(model, glm::vec3(0.3f)); // a smaller lamp cube
-    glUniformMatrix4fv(glGetUniformLocation(lampProgramId, "model"), 1, GL_FALSE, &model[0][0]);
+    // // also draw the lamp object
+    // glUseProgram(lampProgramId);
+    // glUniformMatrix4fv(glGetUniformLocation(lampProgramId, "projection"), 1, GL_FALSE, &projection[0][0]);
+    // glUniformMatrix4fv(glGetUniformLocation(lampProgramId, "view"), 1, GL_FALSE, &view[0][0]);
+    // model = glm::mat4(1.0f);
+    // model = glm::translate(model, light_pos);
+    // model = glm::scale(model, glm::vec3(0.3f)); // a smaller lamp cube
+    // glUniformMatrix4fv(glGetUniformLocation(lampProgramId, "model"), 1, GL_FALSE, &model[0][0]);
 
-    glBindVertexArray(lampVAO);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
+    // glBindVertexArray(lampVAO);
+    // glDrawArrays(GL_TRIANGLES, 0, 36);
 
     // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
     // -------------------------------------------------------------------------------
