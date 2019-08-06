@@ -91,7 +91,6 @@ static constexpr const char *cubeFragmentShaderSource{
 
     "struct Light\n"
     "{\n"
-    // "    vec3 position_;\n"
     "    vec3 direction_;\n"
     "    vec3 ambient_;\n"
     "    vec3 diffuse_;\n"
@@ -559,36 +558,22 @@ int main()
     // -----
     processInput(window);
 
-    // bind textures to specify uniform.
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, textureID);
-
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, textureID2);
-
     glUseProgram(cubeProgramId);
 
     GLint viewPosLoc{glGetUniformLocation(cubeProgramId, "cameraPos")};
     glUniform3fv(viewPosLoc, 1, &cameraPos[0]);
 
-    glm::vec3 lightAmbientColor{0.2f, 0.2f, 0.2f};
-    glm::vec3 lightDiffuseColor{0.5f, 0.5f, 0.5f};
-    glm::vec3 lightSpecularColor{1.0f, 1.0f, 1.0f};
     glm::vec3 lightDirection{-0.2f, -1.0f, -0.3f};
-
     GLint lightDirectionLoc{glGetUniformLocation(cubeProgramId, "light.direction_")};
     glUniform3fv(lightDirectionLoc, 1, &lightDirection[0]);
 
     GLint lightAmbientLoc{glGetUniformLocation(cubeProgramId, "light.ambient_")};
-    // glUniform3fv(lightAmbientLoc, 1, &lightAmbientColor[0]);
     glUniform3f(lightAmbientLoc, 0.2, 0.2, 0.2);
 
     GLint lightDiffuseLoc{glGetUniformLocation(cubeProgramId, "light.diffuse_")};
-    // glUniform3fv(lightDiffuseLoc, 1, &lightDiffuseColor[0]);
     glUniform3f(lightDiffuseLoc, 0.5, 0.5, 0.5);
 
     GLint lightSpecularLoc{glGetUniformLocation(cubeProgramId, "light.specular_")};
-    // glUniform3fv(lightSpecularLoc, 1, &lightSpecularColor[0]);
     glUniform3f(lightSpecularLoc, 1.0, 1.0, 1.0);
 
     GLint materialShininessLoc{glGetUniformLocation(cubeProgramId, "material.shininess_")};
@@ -606,6 +591,13 @@ int main()
     // model
     glm::mat4 model{1.0f};
     glUniformMatrix4fv(glGetUniformLocation(cubeProgramId, "model"), 1, GL_FALSE, &model[0][0]);
+
+    // bind textures to specify uniform.
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, textureID2);
 
     // render containers
     glBindVertexArray(cubeVAO);
