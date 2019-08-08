@@ -96,6 +96,7 @@ static constexpr const char *cubeFragmentShaderSource{
 	"    vec3  camera_position_;\n"
 	"    vec3  camera_front_;\n"
 	"     float  cutoff_;\n"
+	"	  float outer_cutoff_;\n"
 
 	"    vec3 ambient_;\n"
 	"    vec3 diffuse_;\n"
@@ -114,14 +115,6 @@ static constexpr const char *cubeFragmentShaderSource{
 	"void main()\n"
 	"{\n"
 
-	"   vec3 lightDir = normalize(light.camera_position_ - FragPos);\n"
-
-	// check if lighting is inside the spotlight cone
-	"   float thea = dot(lightDir, normalize(-light.camera_front_));\n"
-
-	"if(thea > light.cutoff_)\n"
-	"{\n"
-
 	// ambient
 	"    vec3 ambientVec = light.ambient_ * texture(material.diffuse_, TexCoords).rgb;\n"
 
@@ -137,20 +130,24 @@ static constexpr const char *cubeFragmentShaderSource{
 	"    float specularValue = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess_);\n"
 	"    vec3 specularVec = light.specular_ * specularValue * texture(material.specular_, TexCoords).rgb;\n"
 
-	"    float distance = length(light.camera_position_ - FragPos);\n"
-	"    float attenuationValue = 1.0 / (light.constant_ + light.linear_ * distance + light.quadratic_ * (distance * distance));\n"
+	// flashlight( soft edge )
+	"	 float thea = dot(lightDir, -light.camera_front_);\n"
+	"	 float epsilon = light.cutoff_ - light.outer_cutoff_;\n"
+	"	 float intensity = clamp((thea - light.outer_cutoff_) / epsilon, 0.0, 1.0);\n"
+	"	 diffuseVec *= intensity;\n"
+	"	 specularVec *= intensity;\n"
+
+	// attenuation
+	"	 float distance = length(light.camera_position_ - FragPos);\n"
+	"	 float attenuation = 1.0 / (light.constant_ + light.linear_ * distance + light.quadratic_ * (distance * distance));\n"
+	"	 ambientVec *= attenuation;\n"
+	"	 diffuseVec *= attenuation;\n"
+	"	 specularVec *= attenuation;\n"
+
 
 	// here ambient need not attenuationValue.
-	"    vec3 finalColor = (diffuseVec + specularVec)*attenuationValue  + ambientVec;\n"
+	"    vec3 finalColor = diffuseVec + specularVec  + ambientVec;\n"
 	"    FragColor = vec4(finalColor, 1.0);\n"
-
-	"}else{\n"
-
-	// else, use ambient light so scene isn't completely dark outside the spotlight.
-	" FragColor = vec4(light.ambient_ * texture(material.diffuse_, TexCoords).rgb, 1.0);\n "
-
-	"}\n"
-
 	"}" };
 
 static constexpr const char *lampVertexShaderSource{
@@ -611,6 +608,9 @@ int main()
 
 		GLint cutOffLoc{ glGetUniformLocation(cubeProgramId, "light.cutoff_") };
 		glUniform1f(cutOffLoc, std::cos(glm::radians(12.5f)));
+
+		GLint outerCutOffLoc{ glGetUniformLocation(cubeProgramId, "light.outer_cutoff_") };
+		glUniform1f(outerCutOffLoc, std::cos(glm::radians(17.5f)));
 
 		GLint lightAmbientLoc{ glGetUniformLocation(cubeProgramId, "light.ambient_") };
 		glUniform3f(lightAmbientLoc, 0.1f, 0.1f, 0.1f);
