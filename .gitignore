@@ -1,3 +1,11 @@
 
 #dir
 build
+x64
+Debug
+Release
+.vs
+
+#file
+.suo
+.sln
