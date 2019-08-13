@@ -78,99 +78,178 @@ static constexpr const char *cubeFragmentShaderSource{
 	"#version 330 core\n"
 	"out vec4 FragColor;\n"
 
-	"struct DirLight {\n"
-	"	vec3 direction_;\n"
-	"	vec3 ambient_;\n"
-	"	vec3 diffuse_;\n"
-	"	vec3 specular_;\n"
-     "};\n"
-
-	"struct PointLight {\n"
-	"	vec3 position_;\n"
-
-	"	float constant_;\n"
-	"	float linear_;\n"
-	"	float quadratic_;\n"
-
-	"	vec3 ambient_;\n"
-	"	vec3 diffuse_;\n"
-	"	vec3 specular_;\n"
-    "};\n"
-
-
 	"struct Material\n"
 	"{\n"
-	"    sampler2D diffuse_;\n" //ambient color is the same with diffuse color, ususally.
-	"    sampler2D specular_;\n"
-	"    float shininess_;\n"
+	"	sampler2D diffuse_;\n"
+	"	sampler2D specular_;\n"
+	"	float shininess_;\n"
 	"};\n"
 
-	"struct SpotLight {\n"
-	"vec3 position_;\n"
-	"vec3 direction_;\n"
-	"float cutOff_;\n"
-	"float outerCutOff_;\n"
+"struct DirLight {\n"
+"	vec3 direction_;\n"
+"	vec3 ambient_;\n"
+"	vec3 diffuse_;\n"
+"	vec3 specular_;\n"
+"};\n"
 
-	"float constant_;\n"
-	"float linear_;\n"
-	"float quadratic_;\n"
+"struct PointLight\n"
+"{\n"
+"	vec3 position_;\n"
 
-	"vec3 ambient_;\n"
-	"vec3 diffuse_;\n"
-	"vec3 specular_;\n"
-    "};\n"
+"	float constant_;\n"
+"	float linear_;\n"
+"	float quadratic_;\n"
 
-	"#define NR_POINT_LIGHTS 4\n"
+"	vec3 ambient_;\n"
+"	vec3 diffuse_;\n"
+"	vec3 specular_;\n"
+"};\n"
 
-	"in vec3 Normal;\n"
-	"in vec3 FragPos;\n"
-	"in vec2 TexCoords;\n"
 
-	"uniform Material material;\n"
-	"uniform Light light;\n"
-	"uniform DirLight dirlight;\n"
-	"uniform PointLight pointLights[NR_POINT_LIGHTS];\n"
-	"uniform SpotLight spotLight;\n"
+"struct Material\n"
+"{\n"
+"    sampler2D diffuse_;\n" //ambient color is the same with diffuse color, ususally.
+"    sampler2D specular_;\n"
+"    float shininess_;\n"
+"};\n"
 
-	"uniform vec3 cameraPos;\n" //camera pos.
+"struct SpotLight {\n"
+"vec3 position_;\n"   // bes same with camera position.
+"vec3 direction_;\n" // be same with camera direction.
+"float cutOff_;\n"
+"float outer_cutOff_;\n"
 
-	"void main()\n"
-	"{\n"
+"float constant_;\n"
+"float linear_;\n"
+"float quadratic_;\n"
 
-	// ambient
-	"    vec3 ambientVec = light.ambient_ * texture(material.diffuse_, TexCoords).rgb;\n"
+"vec3 ambient_;\n"
+"vec3 diffuse_;\n"
+"vec3 specular_;\n"
+"};\n"
+
+"#define NR_POINT_LIGHTS 4\n"
+
+"in vec3 Normal;\n"
+"in vec3 FragPos;\n"
+"in vec2 TexCoords;\n"
+
+"uniform Material material;\n"
+"uniform Light light;\n"
+"uniform DirLight dirLight;\n" // cllimated light
+"uniform PointLight pointLights[NR_POINT_LIGHTS];\n" // point lights
+"uniform SpotLight spotLight;\n" // flash light
+
+"uniform vec3 cameraPos;\n" //camera pos.
+
+"vec3 CalcDirLight(DirLight dir_light, vec3 normal, vec3 viewer_dir);\n"
+"vec3 CalcPointLight(PointLight point_light, vec3 normal, vec3 frag_pos, vec3 viewer_dir);\n"
+"vec3 CalcSpotLight(SpotLight spot_light, vec3 normal, vec3 frag_pos, vec3 viewer_dir);\n"
+
+"void main()\n"
+"{\n"
+
+// properties
+"vec3 norm = normalize(Normal);\n"
+"vec3 viewDir = normalize(cameraPos - FragPos);\n"
+
+// == =====================================================
+// Our lighting is set up in 3 phases: directional, point lights and an optional flashlight
+// For each phase, a calculate function is defined that calculates the corresponding color
+// per lamp. In the main() function we take all the calculated colors and sum them up for
+// this fragment's final color.
+// == =====================================================
+// phase 1: directional lighting
+"vec3 result = CalcDirLight(dirLight, norm, viewDir);\n"
+
+// phase 2: point lights
+"for (int i = 0; i < NR_POINT_LIGHTS; i++)\n"
+"	result += CalcPointLight(pointLights[i], norm, FragPos, viewDir);\n"
+
+// phase 3: spot light
+"result += CalcSpotLight(spotLight, norm, FragPos, viewDir);\n"
+
+"FragColor = vec4(result, 1.0);\n"
+
+"}\n"
+
+"vec3 CalcDirLight(DirLight dir_light, vec3 normal, vec3 viewer_dir)"
+"{\n"
+
+	"vec3 light_direction = normalize(-dir_light.direction_);\n"
 
 	// diffuse
-	"    vec3 normalVec = normalize(Normal);\n"
-	"    vec3 lightDir = normalize(light.camera_position_ - FragPos);\n"
-	"    float diffuseValue = max(dot(normalVec, lightDir), 0.0);\n"
-	"    vec3 diffuseVec = light.diffuse_  * diffuseValue * texture(material.diffuse_, TexCoords).rgb; \n"
+	"float diffuse_value = max(dot(light_dirction, normal), 0.0f);\n"
 
 	// specular
-	"    vec3 viewDir = normalize(cameraPos - FragPos);\n"
-	"    vec3 reflectDir = reflect(-lightDir, normalVec);\n"
-	"    float specularValue = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess_);\n"
-	"    vec3 specularVec = light.specular_ * specularValue * texture(material.specular_, TexCoords).rgb;\n"
+	"vec3 reflect_direction = reflect(-light_dirction, normal);\n"
+	"float specular_value = pow(max(dot(viewer_dir, reflect_direction), 0.0f), material.shininess_);\n"
 
-	// flashlight( soft edge )
-	"	 float thea = dot(lightDir, -light.camera_front_);\n"
-	"	 float epsilon = light.cutoff_ - light.outer_cutoff_;\n"
-	"	 float intensity = clamp((thea - light.outer_cutoff_) / epsilon, 0.0, 1.0);\n"
-	"	 diffuseVec *= intensity;\n"
-	"	 specularVec *= intensity;\n"
+	"vec3 ambient = dir_light.ambient_ * vec3(texture(material.diffuse_, TexCoords));\n"
+	"vec3 diffuse = dir_light.diffuse_ * diffuse_value * vec3(texture(material.diffuse_, TexCoords));\n"
+	"vec3 specular = dir_light.specular * specular_value * vec3(texture(material.specular_, TexCoords));\n"
+
+	"return (ambitne + diffuse + specular);\n"
+"}\n"
+
+"vec3 CalcPointLight(PointLight point_light, vec3 normal, vec3 frag_pos, vec3 viewer_dir)\n"
+"{\n"
+	"vec3 light_direction = normalize(point_light.position_ - frag_pos);\n"
+
+	// diffuse
+	"float diffuse_value = max(dot(light_direction, normal), 0.0f);\n"
+
+	// specular
+	"vec3 reflect_direction = reflect(-light_direction, normal);\n"
+	"float specular_value = pow(max(dot(viewer_dir, reflect_direction), 0.0), material.shininess_);\n"
 
 	// attenuation
-	"	 float distance = length(light.camera_position_ - FragPos);\n"
-	"	 float attenuation = 1.0 / (light.constant_ + light.linear_ * distance + light.quadratic_ * (distance * distance));\n"
-	"	 ambientVec *= attenuation;\n"
-	"	 diffuseVec *= attenuation;\n"
-	"	 specularVec *= attenuation;\n"
+	"float distance = length(point_light.position_ - frag_pos);\n"
+	"float attenuation_value = 1.0f / (point_light.constant_ + point_light.linear_ * distance + point_light.quadratic_ * (distance * distance));\n"
 
+	"vec3 ambient = light.ambient_ * vec3(texture(material.diffuse_, TexCoords));\n"
+	"vec3 diffuse = light.diffuse_ * diffuse_value * vec3(texture(material.diffuse_, TexCoords));\n"
+	"vec3 specular = light.specular_ * specular_value * vec3(texture(material.specular_, TexCoords));\n"
 
-	// here ambient need not attenuationValue.
-	"    vec3 finalColor = diffuseVec + specularVec  + ambientVec;\n"
-	"    FragColor = vec4(finalColor, 1.0);\n"
-	"}" };
+	"ambient *= attenuation;\n"
+	"diffuse *= attenuation;\n"
+	"specular *= attenuation;\n"
+	"return (ambient + diffuse + specular);\n"
+"}\n"
+
+// calculates the color when using a spot light.
+"vec3 CalcSpotLight(SpotLight spot_light, vec3 normal, vec3 frag_pos, vec3 viewer_dir)\n"
+"{\n"
+	"vec3 light_direction = normalize(spot_light.position_ - frag_pos);\n"
+
+	// diffuse shading
+	"float diff = max(dot(normal, light_direction), 0.0);\n"
+
+	// specular shading
+	"vec3 reflect_direction = reflect(-light_direction, normal);\n"
+	"float spec = pow(max(dot(viewer_dir, reflect_direction), 0.0), material.shininess_);\n"
+
+	// attenuation
+	"float distance = length(spot_light.position_ - frag_pos);\n"
+	"float attenuation = 1.0f / (spot_light.constant_ + spot_light.linear_ * distance + spot_light.quadratic_ * (distance * distance));\n"
+
+	// spotlight intensity
+	"float theta = dot(light_direction, normalize(-spot_light.direction_));\n"
+	"float epsilon = spot_light.cutOff_ - spot_light.outer_cutoff_;\n"
+	"float intensity = clamp((theta - spot_light.outer_cutoff_) / epsilon, 0.0, 1.0);\n"
+
+	// combine results
+	"vec3 ambient = spot_light.ambient_ * vec3(texture(material.diffuse_, TexCoords));\n"
+	"vec3 diffuse = spot_light.diffuse * diff * vec3(texture(material.diffuse_, TexCoords));\n"
+	"vec3 specular = spot_light.specular * spec * vec3(texture(material.specular_, TexCoords));\n"
+
+	"ambient *= attenuation * intensity;\n"
+	"diffuse *= attenuation * intensity;\n"
+	"specular *= attenuation * intensity;\n"
+
+	"return (ambient + diffuse + specular);\n"
+"}\n"
+};
 
 static constexpr const char *lampVertexShaderSource{
 	"#version 330 core\n"
@@ -420,47 +499,48 @@ int main()
 	// ------------------------------------------------------------------
 	const float vertices[]{
 		// positions          // normals           // texture coords
-		-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
-		0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f,
-		0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f,
-		0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f,
-		-0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
+-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
+ 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  0.0f,
+ 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
+ 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
+-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  1.0f,
+-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
 
-		-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-		0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f,
-		0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
-		0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
-		-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-		-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
+ 0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  0.0f,
+ 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
+ 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
+-0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  1.0f,
+-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
 
-		-0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-		-0.5f, 0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-		-0.5f, -0.5f, 0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-		-0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
+-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
+-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
+-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
+-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
+-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
 
-		0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-		0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,
-		0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-		0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-		0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-		0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+ 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
+ 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
+ 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
+ 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
+ 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
+ 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
 
-		-0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f,
-		0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 1.0f,
-		0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-		0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-		-0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-		-0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f,
+-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  1.0f,
+ 0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  1.0f,
+ 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  0.0f,
+ 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  0.0f,
+-0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  0.0f,
+-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  1.0f,
 
-		-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-		0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f,
-		0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
-		0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
-		-0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
-		-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f };
+-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,
+ 0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  1.0f,
+ 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
+ 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
+-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  0.0f,
+-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f
+	};
 
 	// positions all containers
 	const glm::vec3 cubePositions[]{
@@ -474,6 +554,14 @@ int main()
 		glm::vec3(1.5f, 2.0f, -2.5f),
 		glm::vec3(1.5f, 0.2f, -1.5f),
 		glm::vec3(-1.3f, 1.0f, -1.5f) };
+
+	// positions of the point lights
+	const glm::vec3 pointLightPositions[]{
+		glm::vec3(0.7f,  0.2f,  2.0f),
+		glm::vec3(2.3f, -3.3f, -4.0f),
+		glm::vec3(-4.0f,  2.0f, -12.0f),
+		glm::vec3(0.0f,  0.0f, -3.0f)
+	};
 
 	GLuint VBO{};
 	GLuint cubeVAO{};
@@ -618,9 +706,18 @@ int main()
 		GLint viewPosLoc{ glGetUniformLocation(cubeProgramId, "cameraPos") };
 		glUniform3fv(viewPosLoc, 1, &cameraPos[0]);
 
-		glm::vec3 lightAmbientColor{ 0.2f, 0.2f, 0.2f };
-		glm::vec3 lightDiffuseColor{ 0.5f, 0.5f, 0.5f };
-		glm::vec3 lightSpecularColor{ 1.0f, 1.0f, 1.0f };
+		// directional light
+		GLint dirLightDirectionLoc{ glGetUniformLocation(cubeProgramId, "dirLight.direction_") };
+		glUniform3f(dirLightDirectionLoc, -0.2f, -1.0f, -0.3f);
+
+		GLint dirLightAmbientLoc{ glGetUniformLocation(cubeProgramId, "dirLight.ambient_") };
+		glUniform3f(dirLightAmbientLoc, 0.05f, 0.05f, 0.05f);
+
+		GLint dirLightDiffuseLoc{ glGetUniformLocation(cubeProgramId, "dirLight.diffuse_") };
+		glUniform3f(dirLightDiffuseLoc, 0.4f, 0.4f, 0.4f);
+
+		GLint dirLightSpecularLoc{ glGetUniformLocation(cubeProgramId, "dirLight.specular_") };
+		glUniform3f(dirLightSpecularLoc, 0.5f, 0.5f, 0.5f);
 
 		GLint cameraPosLoc{ glGetUniformLocation(cubeProgramId, "light.camera_position_") };
 		glUniform3fv(cameraPosLoc, 1, &cameraPos[0]);
@@ -681,18 +778,6 @@ int main()
 
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
-
-		// // also draw the lamp object
-		// glUseProgram(lampProgramId);
-		// glUniformMatrix4fv(glGetUniformLocation(lampProgramId, "projection"), 1, GL_FALSE, &projection[0][0]);
-		// glUniformMatrix4fv(glGetUniformLocation(lampProgramId, "view"), 1, GL_FALSE, &view[0][0]);
-		// model = glm::mat4(1.0f);
-		// model = glm::translate(model, light_pos);
-		// model = glm::scale(model, glm::vec3(0.3f)); // a smaller lamp cube
-		// glUniformMatrix4fv(glGetUniformLocation(lampProgramId, "model"), 1, GL_FALSE, &model[0][0]);
-
-		// glBindVertexArray(lampVAO);
-		// glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
 		// -------------------------------------------------------------------------------
