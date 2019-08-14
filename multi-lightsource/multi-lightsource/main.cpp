@@ -179,17 +179,17 @@ static constexpr const char *cubeFragmentShaderSource{
 	"vec3 light_direction = normalize(-dir_light.direction_);\n"
 
 	// diffuse
-	"float diffuse_value = max(dot(light_dirction, normal), 0.0f);\n"
+	"float diffuse_value = max(dot(light_direction, normal), 0.0f);\n"
 
 	// specular
-	"vec3 reflect_direction = reflect(-light_dirction, normal);\n"
+	"vec3 reflect_direction = reflect(-light_direction, normal);\n"
 	"float specular_value = pow(max(dot(viewer_dir, reflect_direction), 0.0f), material.shininess_);\n"
 
 	"vec3 ambient = dir_light.ambient_ * vec3(texture(material.diffuse_, TexCoords));\n"
 	"vec3 diffuse = dir_light.diffuse_ * diffuse_value * vec3(texture(material.diffuse_, TexCoords));\n"
-	"vec3 specular = dir_light.specular * specular_value * vec3(texture(material.specular_, TexCoords));\n"
+	"vec3 specular = dir_light.specular_ * specular_value * vec3(texture(material.specular_, TexCoords));\n"
 
-	"return (ambitne + diffuse + specular);\n"
+	"return (ambient + diffuse + specular);\n"
 "}\n"
 
 "vec3 CalcPointLight(PointLight point_light, vec3 normal, vec3 frag_pos, vec3 viewer_dir)\n"
@@ -211,9 +211,9 @@ static constexpr const char *cubeFragmentShaderSource{
 	"vec3 diffuse = point_light.diffuse_ * diffuse_value * vec3(texture(material.diffuse_, TexCoords));\n"
 	"vec3 specular = point_light.specular_ * specular_value * vec3(texture(material.specular_, TexCoords));\n"
 
-	"ambient *= attenuation;\n"
-	"diffuse *= attenuation;\n"
-	"specular *= attenuation;\n"
+	"ambient *= attenuation_value;\n"
+	"diffuse *= attenuation_value;\n"
+	"specular *= attenuation_value;\n"
 	"return (ambient + diffuse + specular);\n"
 "}\n"
 
@@ -725,40 +725,40 @@ int main()
 		glUniform3f(glGetUniformLocation(cubeProgramId, "pointLights[0].diffuse_"), 0.8f, 0.8f, 0.8f);
 		glUniform3f(glGetUniformLocation(cubeProgramId, "pointLights[0].specular_"), 1.0f, 1.0f, 1.0f);
 		glUniform1f(glGetUniformLocation(cubeProgramId, "pointLights[0].constant_"), 1.0f);
-		glUniform1f(glGetUniformLocation(cubeProgramId, "pointLights[0].linear_"), 1.0f);
-		glUniform1f(glGetUniformLocation(cubeProgramId, "pointLights[0].quadratic_"), 1.0f);
+		glUniform1f(glGetUniformLocation(cubeProgramId, "pointLights[0].linear_"), 0.09f);
+		glUniform1f(glGetUniformLocation(cubeProgramId, "pointLights[0].quadratic_"), 0.032f);
 		// point light 2
 		glUniform3fv(glGetUniformLocation(cubeProgramId, "pointLights[1].position_"), 1, &pointLightPositions[1][0]);
 		glUniform3f(glGetUniformLocation(cubeProgramId, "pointLights[1].ambient_"), 0.05f, 0.05f, 0.05f);
 		glUniform3f(glGetUniformLocation(cubeProgramId, "pointLights[1].diffuse_"), 0.8f, 0.8f, 0.8f);
 		glUniform3f(glGetUniformLocation(cubeProgramId, "pointLights[1].specular_"), 1.0f, 1.0f, 1.0f);
 		glUniform1f(glGetUniformLocation(cubeProgramId, "pointLights[1].constant_"), 1.0f);
-		glUniform1f(glGetUniformLocation(cubeProgramId, "pointLights[1].linear_"), 1.0f);
-		glUniform1f(glGetUniformLocation(cubeProgramId, "pointLights[1].quadratic_"), 1.0f);
+		glUniform1f(glGetUniformLocation(cubeProgramId, "pointLights[1].linear_"), 0.09f);
+		glUniform1f(glGetUniformLocation(cubeProgramId, "pointLights[1].quadratic_"), 0.032);
 		// point light 3
 		glUniform3fv(glGetUniformLocation(cubeProgramId, "pointLights[2].position_"), 1, &pointLightPositions[2][0]);
 		glUniform3f(glGetUniformLocation(cubeProgramId, "pointLights[2].ambient_"), 0.05f, 0.05f, 0.05f);
 		glUniform3f(glGetUniformLocation(cubeProgramId, "pointLights[2].diffuse_"), 0.8f, 0.8f, 0.8f);
 		glUniform3f(glGetUniformLocation(cubeProgramId, "pointLights[2].specular_"), 1.0f, 1.0f, 1.0f);
 		glUniform1f(glGetUniformLocation(cubeProgramId, "pointLights[2].constant_"), 1.0f);
-		glUniform1f(glGetUniformLocation(cubeProgramId, "pointLights[2].linear_"), 1.0f);
-		glUniform1f(glGetUniformLocation(cubeProgramId, "pointLights[2].quadratic_"), 1.0f);
+		glUniform1f(glGetUniformLocation(cubeProgramId, "pointLights[2].linear_"), 0.09f);
+		glUniform1f(glGetUniformLocation(cubeProgramId, "pointLights[2].quadratic_"), 0.032f);
 		// point light 4
 		glUniform3fv(glGetUniformLocation(cubeProgramId, "pointLights[3].position_"), 1, &pointLightPositions[1][0]);
 		glUniform3f(glGetUniformLocation(cubeProgramId, "pointLights[3].ambient_"), 0.05f, 0.05f, 0.05f);
 		glUniform3f(glGetUniformLocation(cubeProgramId, "pointLights[3].diffuse_"), 0.8f, 0.8f, 0.8f);
 		glUniform3f(glGetUniformLocation(cubeProgramId, "pointLights[3].specular_"), 1.0f, 1.0f, 1.0f);
 		glUniform1f(glGetUniformLocation(cubeProgramId, "pointLights[3].constant_"), 1.0f);
-		glUniform1f(glGetUniformLocation(cubeProgramId, "pointLights[3].linear_"), 1.0f);
-		glUniform1f(glGetUniformLocation(cubeProgramId, "pointLights[3].quadratic_"), 1.0f);
+		glUniform1f(glGetUniformLocation(cubeProgramId, "pointLights[3].linear_"), 0.09f);
+		glUniform1f(glGetUniformLocation(cubeProgramId, "pointLights[3].quadratic_"), 0.32f);
 		// spotLight
 		glUniform3fv(glGetUniformLocation(cubeProgramId, "spotLight.position_"), 1, &cameraPos[0]);
 		glUniform3fv(glGetUniformLocation(cubeProgramId, "spotLight.direction_"), 1, &cameraFront[0]);
 		glUniform3f(glGetUniformLocation(cubeProgramId, "spotLight.ambient_"), 0.0f, 0.0f, 0.0f);
-		glUniform3f(glGetUniformLocation(cubeProgramId, "spotLight.diffuse_"), 0.0f, 0.0f, 0.0f);
+		glUniform3f(glGetUniformLocation(cubeProgramId, "spotLight.diffuse_"), 1.0f, 1.0f, 1.0f);
 		glUniform3f(glGetUniformLocation(cubeProgramId, "spotLight.specular_"), 1.0f, 1.0f, 1.0f);
 		glUniform1f(glGetUniformLocation(cubeProgramId, "spotLight.constant_"), 1.0f);
-		glUniform1f(glGetUniformLocation(cubeProgramId, "spotLight.linear_"), 1.0f);
+		glUniform1f(glGetUniformLocation(cubeProgramId, "spotLight.linear_"), 0.09f);
 		glUniform1f(glGetUniformLocation(cubeProgramId, "spotLight.quadratic_"), 0.032f);
 		glUniform1f(glGetUniformLocation(cubeProgramId, "spotLight.cutoff_"), std::cos(glm::radians(12.5f)));
 		glUniform1f(glGetUniformLocation(cubeProgramId, "spotLight.outer_cutoff_"), std::cos(glm::radians(15.0f)));
@@ -800,16 +800,14 @@ int main()
 
 		// we now draw as many light bulbs as we have point lights.
 		glBindVertexArray(lampVAO);
-		for (unsigned int i = 0; i < 4; i++)
+		for (std::size_t i = 0; i < 4; ++i)
 		{
-			model = glm::mat4(1.0f);
+			model = glm::mat4{ 1.0f };
 			model = glm::translate(model, pointLightPositions[i]);
 			model = glm::scale(model, glm::vec3(0.2f)); // Make it a smaller cube
-			glUniformMatrix4fv(glGetUniformLocation(lampProgramId, "model"), 1, GL_FALSE, &view[0][0]);
+			glUniformMatrix4fv(glGetUniformLocation(lampProgramId, "model"), 1, GL_FALSE, &model[0][0]);
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
-
-
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
 		// -------------------------------------------------------------------------------
