@@ -26,10 +26,13 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="basic_type.h">
+    <ClInclude Include="stb_image\stb_image.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="stb_image\stb_image.h">
+    <ClInclude Include="mesh.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="shader.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
