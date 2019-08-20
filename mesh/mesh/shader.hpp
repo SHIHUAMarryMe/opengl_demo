@@ -40,6 +40,12 @@ public:
 		{
 			shader_id = glCreateShader(GL_VERTEX_SHADER);
 		}
+
+		if (type == shader_type::fragment_shader)
+		{
+			shader_id = glCreateShader(GL_FRAGMENT_SHADER);
+		}
+
 		std::basic_string<char> shader_source{ file_buffer_reader.str() };
 		glShaderSource(shader_id, 1, &(shader_source.c_str()), nullptr);
 		glCompileShader(shader_id);
