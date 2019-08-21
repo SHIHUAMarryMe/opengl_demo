@@ -34,6 +34,7 @@ public:
 
 		// read data which is in file.
 		file_buffer_reader << file_buffer_ptr;
+
 		std::size_t shader_id{};
 
 		if (type == shader_type::vertex_shader)

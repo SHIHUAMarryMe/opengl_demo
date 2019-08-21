@@ -35,5 +35,8 @@
     <ClInclude Include="shader.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="model.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -17,7 +17,9 @@ enum class texture_type
 {
 	ambient_type,
 	diffuse_type,
-	specular_type
+	specular_type,
+	normal_type,
+	height_type
 };
 
 struct vertex
@@ -35,8 +37,6 @@ struct texture
 {
 	std::size_t id_;
 	texture_type type_;
-
-	std::basic_string<char> path_;
 };
 
 
