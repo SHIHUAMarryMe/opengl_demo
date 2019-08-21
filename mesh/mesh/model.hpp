@@ -107,7 +107,7 @@ private:
 		}
 
 		// now wak through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
-		for (std::size_t index = 0; index < mesh->mNumFaces; ++index)
+		for (std::size_t index = 0; index < ai_mesh->mNumFaces; ++index)
 		{
 			aiFace face{ ai_mesh->mFaces[index] };
 
