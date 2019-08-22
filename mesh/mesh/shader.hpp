@@ -117,7 +117,6 @@ public:
 		glUniformMatrix4fv(glGetUniformLocation(id, name.c_str()), 1, GL_FALSE, &mat[0][0]);
 	}
 
-private:
 	static bool checkout_shader_state(std::size_t id, shader_type type)
 	{
 		GLint success{};
