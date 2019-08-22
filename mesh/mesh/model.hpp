@@ -24,7 +24,7 @@
 class model_loader final
 {
 private:
-	std::map <std::shared_ptr<mesh>, std::list<texture>> mesh_with_textures_;
+	std::list<std::shared_ptr<mesh>> meshes_;
 	std::vector<std::pair<std::basic_string<char>, texture>> loaded_texture_{};
 
 	std::basic_string<char> texture_file_dir_{};
@@ -46,14 +46,37 @@ public:
 			std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
 			return;
 		}
+
+		// process ASSIMP's root node recursively
+		process_node(scene->mRootNode, scene);
 	}
 
 private:
+
+	// processes a node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).
+	void process_node(aiNode *ai_node, const aiScene *ai_scene)
+	{
+		// process each mesh located at the current node
+		for (std::size_t index = 0; index < ai_node->mNumMeshes; ++index)
+		{
+			// the node object only contains indices to index the actual objects in the scene. 
+			// the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
+			aiMesh* mesh_ptr = ai_scene->mMeshes[ai_node->mMeshes[index]];
+			meshes_.push_back(process_mesh(mesh_ptr, ai_scene));
+		}
+		// after we've processed all of the meshes (if any) we then recursively process each of the children nodes
+		for (std::size_t index = 0; index < ai_node->mNumChildren; ++index)
+		{
+			process_node(ai_node->mChildren[index], ai_scene);
+		}
+	}
+
+
 	std::shared_ptr<mesh> process_mesh(const aiMesh* const ai_mesh, const aiScene* const ai_scene)
 	{
 		std::vector<vertex> vertices{};
 		std::vector<std::size_t> indices{};
-		std::vector<texture> textures{};
+		std::list<texture> textures{};
 
 		for (std::size_t index = 0; index < ai_mesh->mNumVertices; ++index)
 		{
@@ -140,7 +163,6 @@ private:
 		shared_mesh->add_vertices(vertices);
 		shared_mesh->add_indices(indices);
 		shared_mesh->add_textures(textures);
-
 	}
 
 
@@ -179,7 +201,7 @@ private:
 	// gamma unused temporarily.
 	static unsigned int load_texture_from_file(const std::basic_string<char>& file_name, const std::basic_string<char>& file_path, bool gamma = false)
 	{
-		std::basic_string<char> file_path_name{ file_path + '/' + file_name };
+		std::basic_string<char> file_path_name{ file_path + '\\' + file_name };
 
 		unsigned int texture_id{};
 		glGenTextures(1, &texture_id);

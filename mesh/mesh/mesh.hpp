@@ -68,12 +68,12 @@ public:
 		return this->indices_;
 	}
 
-	inline void add_textures(const std::vector<texture>& textures)noexcept
+	inline void add_textures(const std::list<texture>& textures)noexcept
 	{
 		this->textures_ = textures;
 	}
 
-	const const std::vector<texture> get_textures()const noexcept
+	const const std::list<texture> get_textures()const noexcept
 	{
 		return this->textures_;
 	}
@@ -163,7 +163,7 @@ private:
 
 	std::vector<vertex> vertices_;
 	std::vector<std::size_t> indices_;
-	std::vector<texture> textures_;
+	std::list<texture> textures_;
 
 	GLuint VAO_;
 	GLuint VBO_;
