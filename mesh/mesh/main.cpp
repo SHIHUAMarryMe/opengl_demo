@@ -197,11 +197,12 @@ int main()
 	GLuint gl_program_id{ glCreateProgram() };
 	glAttachShader(gl_program_id, vertex_shader_id);
 	glAttachShader(gl_program_id, fragment_shader_id);
+	glLinkProgram(gl_program_id);
 	shader::checkout_shader_state(gl_program_id, shader_type::program);
 
-	model_loader the_model{};
-	the_model.load_model("C:\\Users\\shihua\\source\\repos\\opengl_demo\\mesh\\mesh\\image\\nanosuit\\nanosuit.obj");
-	the_model.load_vertices_data();
+	std::unique_ptr<model_loader> model_loader_ptr{ std::make_unique<model_loader>() };
+	model_loader_ptr->load_model("C:\\Users\\shihua\\source\\repos\\opengl_demo\\mesh\\mesh\\image\\nanosuit\\nanosuit.obj");
+	model_loader_ptr->load_vertices_data();
 
 
 	while (!glfwWindowShouldClose(window))
@@ -227,7 +228,7 @@ int main()
 		model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f)); // translate it down so it's at the center of the scene
 		model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));	// it's a bit too big for our scene, so scale it down
 		shader::set_mat4(gl_program_id, "model", model);
-		the_model.draw(gl_program_id);
+		model_loader_ptr->draw(gl_program_id);
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
 // -------------------------------------------------------------------------------

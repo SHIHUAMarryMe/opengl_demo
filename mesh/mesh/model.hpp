@@ -19,6 +19,7 @@
 #include <map>
 #include <vector>
 #include <list>
+#include <cassert>
 
 
 class model_loader final
@@ -36,7 +37,16 @@ public:
 
 	void load_model(const std::basic_string<char>& model_file)
 	{
-		Assimp::Importer importer;
+		assert(!model_file.empty());
+
+		if (model_file.find_last_not_of('\\') == std::string::npos)
+		{
+			assert(false);
+		}
+
+		texture_file_dir_ = model_file.substr(0, model_file.find_last_of('\\'));
+
+		Assimp::Importer importer{};
 		const aiScene* scene = importer.ReadFile(model_file, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 
 		if (!scene)
@@ -186,6 +196,8 @@ private:
 		shared_mesh->add_vertices(vertices);
 		shared_mesh->add_indices(indices);
 		shared_mesh->add_textures(textures);
+
+		return shared_mesh;
 	}
 
 
@@ -222,11 +234,11 @@ private:
 	}
 
 	// gamma unused temporarily.
-	static unsigned int load_texture_from_file(const std::basic_string<char>& file_name, const std::basic_string<char>& file_path, bool gamma = false)
+	static GLuint load_texture_from_file(const std::basic_string<char>& file_name, const std::basic_string<char>& file_path, bool gamma = false)
 	{
 		std::basic_string<char> file_path_name{ file_path + '\\' + file_name };
 
-		unsigned int texture_id{};
+		GLuint texture_id{};
 		glGenTextures(1, &texture_id);
 
 		int width{}, height{}, nrComponents{};

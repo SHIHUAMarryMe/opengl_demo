@@ -25,8 +25,8 @@ public:
 
 	static GLuint create(const std::basic_string<char>& glsl_file, shader_type type)
 	{
-		assert(glsl_file.empty());
-		std::basic_ifstream<char> file_reader{ glsl_file, std::ios::in };
+		assert(!glsl_file.empty());
+		std::basic_ifstream<char> file_reader{ glsl_file };
 		assert(file_reader.is_open());
 
 		std::basic_ostringstream<char> file_buffer_reader{};
@@ -134,7 +134,8 @@ public:
 				return false;
 			}
 		}
-		else
+
+		if (type == shader_type::program)
 		{
 			glGetProgramiv(id, GL_LINK_STATUS, &success);
 			if (!success)
