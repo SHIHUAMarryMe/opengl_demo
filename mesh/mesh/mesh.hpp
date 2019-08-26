@@ -19,7 +19,6 @@ enum class texture_type
 	ambient_type,
 	diffuse_type,
 	specular_type,
-	normal_type,
 	height_type
 };
 
@@ -99,28 +98,33 @@ public:
 		std::size_t number_of_textures{ this->textures_.size() };
 		auto texture_itr_beg{ this->textures_.cbegin() };
 
+		std::size_t diffuse_no{ 1 };
+		std::size_t specular_no{ 1 };
+		std::size_t ambient_no{ 1 };
+		std::size_t height_no{ 1 };
+
 		for (std::size_t index = 0; index < number_of_textures; ++index)
 		{
 			const texture& ref_texture = *texture_itr_beg;
 
 			if (ref_texture.type_ == texture_type::ambient_type)
 			{
-				glUniform1i(glGetUniformLocation(program_id, ("ambient_texture_" + std::to_string(index)).c_str()), index);
+				glUniform1i(glGetUniformLocation(program_id, ("ambient_texture_" + std::to_string(ambient_no++)).c_str()), index);
 			}
 
 			if (ref_texture.type_ == texture_type::diffuse_type)
 			{
-				glUniform1i(glGetUniformLocation(program_id, ("diffuse_texture_" + std::to_string(index)).c_str()), index);
+				glUniform1i(glGetUniformLocation(program_id, ("diffuse_texture_" + std::to_string(diffuse_no++)).c_str()), index);
 			}
 
 			if (ref_texture.type_ == texture_type::specular_type)
 			{
-				glUniform1i(glGetUniformLocation(program_id, ("specular_texture_" + std::to_string(index)).c_str()), index);
+				glUniform1i(glGetUniformLocation(program_id, ("specular_texture_" + std::to_string(specular_no++)).c_str()), index);
 			}
 
 			if (ref_texture.type_ == texture_type::height_type)
 			{
-				glUniform1i(glGetUniformLocation(program_id, ("height_texture_" + std::to_string(index)).c_str()), index);
+				glUniform1i(glGetUniformLocation(program_id, ("height_texture_" + std::to_string(height_no++)).c_str()), index);
 
 			}
 
@@ -129,6 +133,15 @@ public:
 
 			++texture_itr_beg;
 		}
+
+		// draw mesh
+		glBindVertexArray(VAO_);
+		glDrawElements(GL_TRIANGLES, indices_.size(), GL_UNSIGNED_INT, 0);
+
+		// always good practice to set everything back to defaults once configured.
+		glBindVertexArray(0);
+		glActiveTexture(GL_TEXTURE0);
+
 	}
 
 	void bind_VAO_VBO_EBO()

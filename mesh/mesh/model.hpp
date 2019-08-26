@@ -78,6 +78,8 @@ public:
 	// draw model.
 	inline void draw(GLuint program_id)
 	{
+		glUseProgram(program_id);
+
 		for (const auto& shared_mesh : meshes_)
 		{
 			shared_mesh->bind_texture(program_id);
