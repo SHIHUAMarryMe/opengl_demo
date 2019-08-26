@@ -118,6 +118,12 @@ public:
 				glUniform1i(glGetUniformLocation(program_id, ("specular_texture_" + std::to_string(index)).c_str()), index);
 			}
 
+			if (ref_texture.type_ == texture_type::height_type)
+			{
+				glUniform1i(glGetUniformLocation(program_id, ("height_texture_" + std::to_string(index)).c_str()), index);
+
+			}
+
 			glActiveTexture(GL_TEXTURE0 + index);
 			glBindTexture(GL_TEXTURE_2D, ref_texture.id_);
 
@@ -143,19 +149,19 @@ public:
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), reinterpret_cast<void*>(offset));
 
-		offset = offsetof(vertex, position_);
+		offset = offsetof(vertex, normal_);
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), reinterpret_cast<void*>(offset));
 
-		offset = offsetof(vertex, normal_);
+		offset = offsetof(vertex, texcoord_);
 		glEnableVertexAttribArray(2);
 		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(vertex), reinterpret_cast<void*>(offset));
 
-		offset = offsetof(vertex, texcoord_);
+		offset = offsetof(vertex, tangent_);
 		glEnableVertexAttribArray(3);
 		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), reinterpret_cast<void*>(offset));
 
-		offset = offsetof(vertex, tangent_);
+		offset = offsetof(vertex, bitangent_);
 		glEnableVertexAttribArray(4);
 		glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), reinterpret_cast<void*>(offset));
 

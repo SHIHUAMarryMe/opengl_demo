@@ -185,11 +185,11 @@ private:
 		textures.insert(textures.end(), specular_texture.begin(), specular_texture.end());
 
 		// 3. normal maps
-		std::vector<texture> normal_texture{ load_material_texture(material, aiTextureType_HEIGHT,  texture_type::normal_type) };
+		std::vector<texture> normal_texture{ load_material_texture(material, aiTextureType_HEIGHT,  texture_type::height_type) };
 		textures.insert(textures.end(), normal_texture.begin(), normal_texture.end());
 
 		// 4. height maps
-		std::vector<texture> height_texture{ load_material_texture(material, aiTextureType_AMBIENT, texture_type::height_type) };
+		std::vector<texture> height_texture{ load_material_texture(material, aiTextureType_AMBIENT, texture_type::ambient_type) };
 		textures.insert(textures.end(), height_texture.begin(), height_texture.end());
 
 		std::shared_ptr<mesh> shared_mesh{ std::make_shared<mesh>() };
