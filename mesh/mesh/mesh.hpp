@@ -9,6 +9,7 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
+#include <list>
 #include <string>
 #include <vector>
 #include <cstddef>
@@ -96,10 +97,11 @@ public:
 	void bind_texture(std::size_t program_id)
 	{
 		std::size_t number_of_textures{ this->textures_.size() };
+		auto texture_itr_beg{ this->textures_.cbegin() };
 
 		for (std::size_t index = 0; index < number_of_textures; ++index)
 		{
-			const texture& ref_texture = this->textures_[index];
+			const texture& ref_texture = *texture_itr_beg;
 
 			if (ref_texture.type_ == texture_type::ambient_type)
 			{
@@ -118,14 +120,16 @@ public:
 
 			glActiveTexture(GL_TEXTURE0 + index);
 			glBindTexture(GL_TEXTURE_2D, ref_texture.id_);
+
+			++texture_itr_beg;
 		}
 	}
 
 	void bind_VAO_VBO_EBO()
 	{
 		glGenVertexArrays(1, &(this->VAO_));
-		glGenBuffers(1, (this->VBO_));
-		glGenBuffers(1, (this->EBO_));
+		glGenBuffers(1, &VBO_);
+		glGenBuffers(1, &EBO_);
 
 		glBindVertexArray(this->VAO_);
 

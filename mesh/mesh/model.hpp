@@ -29,6 +29,11 @@ private:
 
 	std::basic_string<char> texture_file_dir_{};
 public:
+	model_loader() = default;
+	model_loader(const model_loader&) = delete;
+	model_loader& operator=(const model_loader&) = delete;
+
+
 	void load_model(const std::basic_string<char>& model_file)
 	{
 		Assimp::Importer importer;
@@ -49,6 +54,24 @@ public:
 
 		// process ASSIMP's root node recursively
 		process_node(scene->mRootNode, scene);
+	}
+
+	void load_vertices_data()
+	{
+		for (const auto& shared_mesh : meshes_)
+		{
+			shared_mesh->bind_VAO_VBO_EBO();
+		}
+	}
+
+
+	// draw model.
+	inline void draw(GLuint program_id)
+	{
+		for (const auto& shared_mesh : meshes_)
+		{
+			shared_mesh->bind_texture(program_id);
+		}
 	}
 
 private:
@@ -85,14 +108,14 @@ private:
 			glm::vec3 normal{};
 
 			// positions
-			position.x = ai_mesh->mVertices[i].x;
-			position.y = ai_mesh->mVertices[i].y;
-			position.z = ai_mesh->mVertices[i].z;
+			position.x = ai_mesh->mVertices[index].x;
+			position.y = ai_mesh->mVertices[index].y;
+			position.z = ai_mesh->mVertices[index].z;
 
 			// normals
-			normal.x = ai_mesh->mNormals[i].x;
-			normal.y = ai_mesh->mNormals[i].y;
-			normal.z = ai_mesh->mNormals[i].z;
+			normal.x = ai_mesh->mNormals[index].x;
+			normal.y = ai_mesh->mNormals[index].y;
+			normal.z = ai_mesh->mNormals[index].z;
 
 			temp_vertex.position_ = position;
 			temp_vertex.normal_ = normal;
@@ -103,8 +126,8 @@ private:
 				glm::vec2 texcoord{};
 				// a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't 
 				// use models where a vertex can have multiple texture coordinates so we always take the first set (0).
-				texcoord.x = ai_mesh->mTextureCoords[0][i].x;
-				texcoord.y = ai_mesh->mTextureCoords[0][i].y;
+				texcoord.x = ai_mesh->mTextureCoords[0][index].x;
+				texcoord.y = ai_mesh->mTextureCoords[0][index].y;
 				temp_vertex.texcoord_ = texcoord;
 			}
 			else
@@ -114,16 +137,16 @@ private:
 
 			// tangent
 			glm::vec3 tangent{};
-			tangent.x = ai_mesh->mTangents[i].x;
-			tangent.y = ai_mesh->mTangents[i].y;
-			tangent.z = ai_mesh->mTangents[i].z;
+			tangent.x = ai_mesh->mTangents[index].x;
+			tangent.y = ai_mesh->mTangents[index].y;
+			tangent.z = ai_mesh->mTangents[index].z;
 			temp_vertex.tangent_ = tangent;
 
 			// bitangent
 			glm::vec3 bitangent{};
-			bitangent.x = ai_mesh->mBitangents[i].x;
-			bitangent.y = ai_mesh->mBitangents[i].y;
-			bitangent.z = ai_mesh->mBitangents[i].z;
+			bitangent.x = ai_mesh->mBitangents[index].x;
+			bitangent.y = ai_mesh->mBitangents[index].y;
+			bitangent.z = ai_mesh->mBitangents[index].z;
 			temp_vertex.bitangent_ = bitangent;
 
 			vertices.push_back(temp_vertex);

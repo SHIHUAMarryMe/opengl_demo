@@ -23,7 +23,7 @@ public:
 	shader(const shader&) = delete;
 	shader& operator=(const shader&) = delete;
 
-	static std::size_t create(const std::basic_string<char>& glsl_file, shader_type type)
+	static GLuint create(const std::basic_string<char>& glsl_file, shader_type type)
 	{
 		assert(glsl_file.empty());
 		std::basic_ifstream<char> file_reader{ glsl_file, std::ios::in };
@@ -35,7 +35,7 @@ public:
 		// read data which is in file.
 		file_buffer_reader << file_buffer_ptr;
 
-		std::size_t shader_id{};
+		GLuint shader_id{};
 
 		if (type == shader_type::vertex_shader)
 		{
@@ -48,7 +48,8 @@ public:
 		}
 
 		std::basic_string<char> shader_source{ file_buffer_reader.str() };
-		glShaderSource(shader_id, 1, &(shader_source.c_str()), nullptr);
+		const char* c_shader_source_str{ shader_source.c_str() };
+		glShaderSource(shader_id, 1, &c_shader_source_str, nullptr);
 		glCompileShader(shader_id);
 
 		if (!shader::checkout_shader_state(shader_id, type))

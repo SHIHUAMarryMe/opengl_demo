@@ -91,21 +91,13 @@ static void process_input(GLFWwindow *window)
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 // ---------------------------------------------------------------------------------------------
-void framebuffer_size_callback(GLFWwindow *window, int width, int height)
+static void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
 	// make sure the viewport matches the new window dimensions; note that width and
 	// height will be significantly larger than specified on retina displays.
 	glViewport(0, 0, width, height);
 }
 
-// glfw: whenever the window size changed (by OS or user resize) this callback function executes
-// ---------------------------------------------------------------------------------------------
-void framebuffer_size_callback(GLFWwindow *window, int width, int height)
-{
-	// make sure the viewport matches the new window dimensions; note that width and
-	// height will be significantly larger than specified on retina displays.
-	glViewport(0, 0, width, height);
-}
 
 // glfw: whenever the mouse moves, this callback is called
 // -------------------------------------------------------
@@ -207,5 +199,44 @@ int main()
 	glAttachShader(gl_program_id, fragment_shader_id);
 	shader::checkout_shader_state(gl_program_id, shader_type::program);
 
-	model_loader model{ "C:\\Users\\shihua\\source\\repos\\opengl_demo\\mesh\\mesh\\image\\nanosuit\\nanosuit.obj" };
+	model_loader the_model{};
+	the_model.load_model("C:\\Users\\shihua\\source\\repos\\opengl_demo\\mesh\\mesh\\image\\nanosuit\\nanosuit.obj");
+	the_model.load_vertices_data();
+
+
+	while (!glfwWindowShouldClose(window))
+	{
+		double current_time{ glfwGetTime() };
+		delta_time = current_time - last_frame;
+		last_frame = current_time;
+
+		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		glUseProgram(gl_program_id);
+
+		// view/projection transformations
+		glm::mat4 projection = glm::perspective(glm::radians(field_of_view), static_cast<float>(WIDTH) / static_cast<float>(HEIGHT), 0.1f, 100.0f);
+		glm::mat4 view{ 1.0f }; // make sure to initialize matrix to identity matrix first
+		view = glm::lookAt(camera_pos, camera_pos + camera_front, camera_up);
+		shader::set_mat4(gl_program_id, "projection", projection);
+		shader::set_mat4(gl_program_id, "view", view);
+
+		// render the loaded model
+		glm::mat4 model{ 1.0f };
+		model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f)); // translate it down so it's at the center of the scene
+		model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));	// it's a bit too big for our scene, so scale it down
+		shader::set_mat4(gl_program_id, "model", model);
+		the_model.draw(gl_program_id);
+
+		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
+// -------------------------------------------------------------------------------
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+	}
+
+	// glfw: terminate, clearing all previously allocated GLFW resources.
+	// ------------------------------------------------------------------
+	glfwTerminate();
+	return 0;
 }
