@@ -43,6 +43,15 @@ struct texture
 
 class mesh final
 {
+private:
+	std::vector<vertex> vertices_;
+	std::vector<GLuint> indices_;
+	std::list<texture> textures_;
+
+	GLuint VAO_;
+	GLuint VBO_;
+	GLuint EBO_;
+
 public:
 	mesh() = default;
 	mesh(const mesh&) = delete;
@@ -58,12 +67,12 @@ public:
 		return this->vertices_;
 	}
 
-	inline void add_indices(const std::vector<std::size_t>& indices)noexcept
+	inline void add_indices(const std::vector<GLuint>& indices)noexcept
 	{
 		this->indices_ = indices;
 	}
 
-	inline const std::vector<std::size_t>& get_indices()const noexcept
+	inline const std::vector<GLuint>& get_indices()const noexcept
 	{
 		return this->indices_;
 	}
@@ -146,17 +155,17 @@ public:
 
 	void bind_VAO_VBO_EBO()
 	{
-		glGenVertexArrays(1, &(this->VAO_));
+		glGenVertexArrays(1, &(VAO_));
 		glGenBuffers(1, &VBO_);
 		glGenBuffers(1, &EBO_);
 
-		glBindVertexArray(this->VAO_);
+		glBindVertexArray(VAO_);
 
-		glBindBuffer(GL_ARRAY_BUFFER, this->VBO_);
-		glBufferData(GL_ARRAY_BUFFER, this->vertices_.size() * sizeof(vertex), &vertices_[0], GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO_);
+		glBufferData(GL_ARRAY_BUFFER, vertices_.size() * sizeof(vertex), &vertices_[0], GL_STATIC_DRAW);
 
-		glBindBuffer(GL_ARRAY_BUFFER, this->EBO_);
-		glBufferData(GL_ARRAY_BUFFER, this->indices_.size() * sizeof(std::size_t), &indices_[0], GL_STATIC_DRAW);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_.size() * sizeof(GLuint), &indices_[0], GL_STATIC_DRAW);
 
 		std::size_t offset{ 0 };
 		glEnableVertexAttribArray(0);
@@ -181,16 +190,6 @@ public:
 		//notice here:
 		glBindVertexArray(0);
 	}
-private:
-
-
-	std::vector<vertex> vertices_;
-	std::vector<std::size_t> indices_;
-	std::list<texture> textures_;
-
-	GLuint VAO_;
-	GLuint VBO_;
-	GLuint EBO_;
 };
 
 

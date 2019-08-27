@@ -110,7 +110,7 @@ private:
 	std::shared_ptr<mesh> process_mesh(const aiMesh* const ai_mesh, const aiScene* const ai_scene)
 	{
 		std::vector<vertex> vertices{};
-		std::vector<std::size_t> indices{};
+		std::vector<GLuint> indices{};
 		std::list<texture> textures{};
 
 		for (std::size_t index = 0; index < ai_mesh->mNumVertices; ++index)
