@@ -11,6 +11,7 @@
 #include <iostream>
 
 #include "shader.hpp"
+#include "stb_image/stb_image.h"
 
 static constexpr const float WIDTH{ 800 };
 static constexpr const float HEIGHT{ 600 };
@@ -143,6 +144,50 @@ static void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
 	}
 }
 
+
+static GLuint load_texture(const char * path)
+{
+	GLuint texture_id{};
+	glGenTextures(1, &texture_id);
+
+	int width{}, height{}, nrComponents{};
+	unsigned char *data{ stbi_load(path, &width, &height, &nrComponents, 0) };
+
+	if (data)
+	{
+		GLenum format{};
+		if (nrComponents == 1)
+			format = GL_RED;
+		else if (nrComponents == 3)
+			format = GL_RGB;
+		else if (nrComponents == 4)
+			format = GL_RGBA;
+
+		glBindTexture(GL_TEXTURE_2D, texture_id);
+		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		stbi_image_free(data);
+	}
+	else
+	{
+		std::cout << "Texture failed to load at path: " << path << std::endl;
+		stbi_image_free(data);
+	}
+
+	data = nullptr;
+
+	return texture_id;
+}
+
+
+
+
 int main()
 {
 	// glfw: initialize and configure
@@ -183,14 +228,120 @@ int main()
 	// configure global opengl state
 	glEnable(GL_DEPTH_TEST);
 
-	GLuint vertex_shader_id{ shader::create("C:\\Users\\shihua\\source\\repos\\opengl_demo\\mesh\\mesh\\glsl\\verterx_shader.glsl", shader_type::vertex_shader) };
-	GLuint fragment_shader_id{ shader::create("C:\\Users\\shihua\\source\\repos\\opengl_demo\\mesh\\mesh\\glsl\\fragment_shader.glsl", shader_type::fragment_shader) };
 
-	GLuint gl_program_id{ glCreateProgram() };
-	glAttachShader(gl_program_id, vertex_shader_id);
-	glAttachShader(gl_program_id, fragment_shader_id);
-	glLinkProgram(gl_program_id);
-	shader::checkout_shader_state(gl_program_id, shader_type::program);
+	const float cube_vertices[]{
+		// positions          // texture Coords
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+	};
+
+	const float floor_vertices[]{
+		// positions          // texture Coords (note we set these higher than 1 (together with GL_REPEAT as texture wrapping mode). this will cause the floor texture to repeat)
+		 5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
+		-5.0f, -0.5f,  5.0f,  0.0f, 0.0f,
+		-5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
+
+		 5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
+		-5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
+		 5.0f, -0.5f, -5.0f,  2.0f, 2.0f
+	};
+
+
+	GLuint cube_VAO{};
+	GLuint cube_VBO{};
+
+	glGenVertexArrays(1, &cube_VAO);
+	glGenBuffers(1, &cube_VBO);
+
+	glBindVertexArray(cube_VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, cube_VBO);
+
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertices), &cube_VBO, GL_STATIC_DRAW);
+
+	GLuint offset{ 0 };
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), reinterpret_cast<void*>(&offset));
+	glEnableVertexAttribArray(0);
+
+	offset = 3 * sizeof(float);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), reinterpret_cast<void*>(&offset));
+	glEnableVertexAttribArray(1);
+
+	// restore.
+	glEnableVertexAttribArray(0);
+
+
+
+	GLuint floor_VAO{};
+	GLuint floor_VBO{};
+
+	glGenVertexArrays(1, &floor_VAO);
+	glGenBuffers(1, &floor_VBO);
+
+	glBindVertexArray(floor_VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, floor_VBO);
+
+	glBufferData(GL_ARRAY_BUFFER, sizeof(floor_vertices), &floor_vertices, GL_STATIC_DRAW);
+
+	offset = 0;
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), reinterpret_cast<void*>(offset));
+	glEnableVertexAttribArray(0);
+
+	offset = 3 * sizeof(float);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), reinterpret_cast<void*>(offset));
+
+
+	GLuint cube_texture_id{ load_texture("C:\\Users\\shihua\\source\\repos\\opengl_demo\\depth_test\\depth_test\\image\\marble.jpg") };
+	GLuint floor_texture_id{ load_texture("C:\\Users\\shihua\\source\\repos\\opengl_demo\\depth_test\\depth_test\\image\\metal.png") };
+
+
+
+	GLuint cube_floor_vertex_shader_id{ shader::create("C:\\Users\\shihua\\source\\repos\\opengl_demo\\depth_test\\depth_test\\glsl\\stencil_testing_vertex_shader.glsl", shader_type::vertex_shader) };
+	GLuint cube_floor_fragment_shader_id{ shader::create("C:\\Users\\shihua\\source\\repos\\opengl_demo\\depth_test\\depth_test\\glsl\\stencil_testing_fragment_shader.glsl", shader_type::fragment_shader) };
+
+	GLuint cube_floor_program_id{ glCreateProgram() };
+	glAttachShader(cube_floor_program_id, cube_floor_vertex_shader_id);
+	glAttachShader(cube_floor_program_id, cube_floor_vertex_shader_id);
+	glLinkProgram(cube_floor_program_id);
+	shader::checkout_shader_state(cube_floor_program_id, shader_type::program);
 
 
 	while (!glfwWindowShouldClose(window))
