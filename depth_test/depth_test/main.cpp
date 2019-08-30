@@ -227,6 +227,11 @@ int main()
 
 	// configure global opengl state
 	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+
+	glEnable(GL_STENCIL_TEST);
+	glStencilFunc(GL_NOTEQUAL, 1, 0xff);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
 
 	const float cube_vertices[]{
@@ -327,7 +332,10 @@ int main()
 
 	offset = 3 * sizeof(float);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), reinterpret_cast<void*>(offset));
+	glEnableVertexAttribArray(1);
 
+	// notice that
+	glEnableVertexAttribArray(0);
 
 	GLuint cube_texture_id{ load_texture("C:\\Users\\shihua\\source\\repos\\opengl_demo\\depth_test\\depth_test\\image\\marble.jpg") };
 	GLuint floor_texture_id{ load_texture("C:\\Users\\shihua\\source\\repos\\opengl_demo\\depth_test\\depth_test\\image\\metal.png") };
@@ -343,6 +351,15 @@ int main()
 	glLinkProgram(cube_floor_program_id);
 	shader::checkout_shader_state(cube_floor_program_id, shader_type::program);
 
+	GLuint edge_vertex_shader_id{ shader::create("C:\\Users\\shihua\\source\\repos\\opengl_demo\\depth_test\\depth_test\\glsl\\edge_vertex_shader.glsl", shader_type::vertex_shader) };
+	GLuint edge_fragment_shader_id{ shader::create("C:\\Users\\shihua\\source\\repos\\opengl_demo\\depth_test\\depth_test\\glsl\\edge_fragment_shader.glsl", shader_type::fragment_shader) };
+
+	GLuint edge_program_id{ glCreateProgram() };
+	glAttachShader(edge_program_id, edge_vertex_shader_id);
+	glAttachShader(edge_program_id, edge_fragment_shader_id);
+	glLinkProgram(edge_program_id);
+	shader::checkout_shader_state(edge_program_id, shader_type::program);
+
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -352,8 +369,6 @@ int main()
 
 		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		glUseProgram(gl_program_id);
 
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
