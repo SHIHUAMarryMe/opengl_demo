@@ -337,10 +337,6 @@ int main()
 	// notice that
 	glEnableVertexAttribArray(0);
 
-	GLuint cube_texture_id{ load_texture("C:\\Users\\shihua\\source\\repos\\opengl_demo\\depth_test\\depth_test\\image\\marble.jpg") };
-	GLuint floor_texture_id{ load_texture("C:\\Users\\shihua\\source\\repos\\opengl_demo\\depth_test\\depth_test\\image\\metal.png") };
-
-
 
 	GLuint cube_floor_vertex_shader_id{ shader::create("C:\\Users\\shihua\\source\\repos\\opengl_demo\\depth_test\\depth_test\\glsl\\stencil_testing_vertex_shader.glsl", shader_type::vertex_shader) };
 	GLuint cube_floor_fragment_shader_id{ shader::create("C:\\Users\\shihua\\source\\repos\\opengl_demo\\depth_test\\depth_test\\glsl\\stencil_testing_fragment_shader.glsl", shader_type::fragment_shader) };
@@ -361,6 +357,13 @@ int main()
 	shader::checkout_shader_state(edge_program_id, shader_type::program);
 
 
+	GLuint wall_texture_id{ load_texture("C:\\Users\\shihua\\source\\repos\\opengl_demo\\depth_test\\depth_test\\image\\marble.jpg") };
+	GLuint floor_texture_id{ load_texture("C:\\Users\\shihua\\source\\repos\\opengl_demo\\depth_test\\depth_test\\image\\metal.png") };
+
+	glUseProgram(cube_floor_program_id);
+	shader::set_int(cube_floor_program_id, "texture_1", 0);
+
+
 	while (!glfwWindowShouldClose(window))
 	{
 		double current_time{ glfwGetTime() };
@@ -368,7 +371,78 @@ int main()
 		last_frame = current_time;
 
 		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+		glUseProgram(edge_program_id);
+		glm::mat4 model{ 1.0f };
+		glm::mat4 view{ glm::lookAt(camera_pos, camera_pos + camera_front, camera_up) };
+		glm::mat4 projection{ glm::perspective(glm::radians(field_of_view), WIDTH / HEIGHT, 0.1f, 100.0f) };
+		shader::set_mat4(edge_program_id, "view", view);
+		shader::set_mat4(edge_program_id, "projection", projection);
+
+		// initialize uniform in cube_floor_program.
+		glUseProgram(cube_floor_program_id);
+		shader::set_mat4(cube_floor_program_id, "view", view);
+		shader::set_mat4(cube_floor_program_id, "projection", projection);
+
+		// draw floor by  cube_floor_program.
+		glStencilMask(0x00); // don't write the floor to the stencil buffer
+		glBindVertexArray(floor_VAO);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, floor_texture_id);
+		shader::set_mat4(cube_floor_program_id, "model", model);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glBindVertexArray(0);
+
+		// 1------------------------------------------
+		// draw cubes which are normal and write stencil testing value to stencil buffer.
+		glStencilFunc(GL_ALWAYS, 1, 0xff);
+		glStencilMask(0xff);
+
+		glBindVertexArray(cube_VAO);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, cube_texture_id);
+
+		// draw fire cube.
+		model = glm::mat4{ 1.0f };
+		model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
+		shader::set_mat4(cube_floor_program_id, "model", model);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		//draw second cube.
+		model = glm::mat4{ 1.0f };
+		model = glm::translate(model, glm::vec3{ 2.0f, 0.0f, 0.0f });
+		shader::set_mat4(cube_floor_program_id, "model", model);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+		// 1-------------------------------------------------------
+
+
+
+		// 2------------------------------------------------------
+		// draw slightly scaled cubes
+		glStencilFunc(GL_NOTEQUAL, 1, 0xff);
+		glStencilMask(0x00);
+		glDisable(GL_DEPTH_TEST);
+		glUseProgram(edge_program_id);
+		float scale{ 1.1f };
+
+		glBindVertexArray(cube_VAO);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, cube_texture_id);
+		model = glm::mat4{ 1.0f };
+		model = glm::translate(model, glm::vec3{ -1.0f, 0.0f, -1.0f });
+		model = glm::scale(model, glm::vec3(scale, scale, scale));
+		shader::set_mat4(edge_program_id, "model", model);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		model = glm::mat4{ 1.0f };
+		model = glm::translate(model, glm::vec3{ 2.0f, 0.0f, 0.0f });
+		model = glm::scale(model, glm::vec3(scale, scale, scale));
+		shader::set_mat4(edge_program_id, "model", model);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glBindVertexArray(0);
+		glStencilMask(0xFF);
+		glEnable(GL_DEPTH_TEST);
 
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
