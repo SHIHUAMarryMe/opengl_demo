@@ -60,65 +60,65 @@ public:
 		return shader_id;
 	}
 
-	static void set_bool(std::size_t id, const std::string &name, bool value) noexcept
+	static void set_bool(GLuint id, const std::string &name, bool value) noexcept
 	{
 		glUniform1i(glGetUniformLocation(id, name.c_str()), (int)value);
 	}
 
-	static void set_int(std::size_t id, const std::string &name, int value) noexcept
+	static void set_int(GLuint id, const std::string &name, int value) noexcept
 	{
 		glUniform1i(glGetUniformLocation(id, name.c_str()), value);
 	}
 
-	static void set_float(std::size_t id, const std::string &name, float value) noexcept
+	static void set_float(GLuint id, const std::string &name, float value) noexcept
 	{
 		glUniform1f(glGetUniformLocation(id, name.c_str()), value);
 	}
 
-	static void set_vec2(std::size_t id, const std::string &name, const glm::vec2 &value) noexcept
+	static void set_vec2(GLuint id, const std::string &name, const glm::vec2 &value) noexcept
 	{
 		glUniform2fv(glGetUniformLocation(id, name.c_str()), 1, &value[0]);
 	}
 
-	static void set_vec2(std::size_t id, const std::string &name, float x, float y) noexcept
+	static void set_vec2(GLuint id, const std::string &name, float x, float y) noexcept
 	{
 		glUniform2f(glGetUniformLocation(id, name.c_str()), x, y);
 	}
 
-	static void set_vec3(std::size_t id, const std::string &name, const glm::vec3 &value) noexcept
+	static void set_vec3(GLuint id, const std::string &name, const glm::vec3 &value) noexcept
 	{
 		glUniform3fv(glGetUniformLocation(id, name.c_str()), 1, &value[0]);
 	}
-	static void set_vec3(std::size_t id, const std::string &name, float x, float y, float z) noexcept
+	static void set_vec3(GLuint id, const std::string &name, float x, float y, float z) noexcept
 	{
 		glUniform3f(glGetUniformLocation(id, name.c_str()), x, y, z);
 	}
 
-	static void set_vec4(std::size_t id, const std::string &name, const glm::vec4 &value) noexcept
+	static void set_vec4(GLuint id, const std::string &name, const glm::vec4 &value) noexcept
 	{
 		glUniform4fv(glGetUniformLocation(id, name.c_str()), 1, &value[0]);
 	}
-	static void set_vec4(std::size_t id, const std::string &name, float x, float y, float z, float w)noexcept
+	static void set_vec4(GLuint id, const std::string &name, float x, float y, float z, float w)noexcept
 	{
 		glUniform4f(glGetUniformLocation(id, name.c_str()), x, y, z, w);
 	}
 
-	static void set_mat2(std::size_t id, const std::string &name, const glm::mat2 &mat) noexcept
+	static void set_mat2(GLuint id, const std::string &name, const glm::mat2 &mat) noexcept
 	{
 		glUniformMatrix2fv(glGetUniformLocation(id, name.c_str()), 1, GL_FALSE, &mat[0][0]);
 	}
 
-	static void set_mat3(std::size_t id, const std::string &name, const glm::mat3 &mat) noexcept
+	static void set_mat3(GLuint id, const std::string &name, const glm::mat3 &mat) noexcept
 	{
 		glUniformMatrix3fv(glGetUniformLocation(id, name.c_str()), 1, GL_FALSE, &mat[0][0]);
 	}
 
-	static void set_mat4(std::size_t id, const std::basic_string<char> &name, const glm::mat4 &mat)noexcept
+	static void set_mat4(GLuint id, const std::basic_string<char> &name, const glm::mat4 &mat)noexcept
 	{
 		glUniformMatrix4fv(glGetUniformLocation(id, name.c_str()), 1, GL_FALSE, &mat[0][0]);
 	}
 
-	static bool checkout_shader_state(std::size_t id, shader_type type)
+	static bool checkout_shader_state(GLuint id, shader_type type)
 	{
 		GLint success{};
 		GLchar error_log[1024]{};

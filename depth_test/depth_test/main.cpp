@@ -13,8 +13,8 @@
 #include "shader.hpp"
 #include "stb_image/stb_image.h"
 
-static constexpr const float WIDTH{ 800 };
-static constexpr const float HEIGHT{ 600 };
+static  const float WIDTH{ 1280 };
+static  const float HEIGHT{ 720 };
 
 // lighting.
 static const glm::vec3 light_pos{ 1.2f, 1.0f, 2.0f };
@@ -176,16 +176,13 @@ static GLuint load_texture(const char * path)
 	}
 	else
 	{
-		std::cout << "Texture failed to load at path: " << path << std::endl;
+		std::cout << __FUNCTION__ << "   " << __LINE__ << "Texture failed to load at path : " << path << std::endl;
 		stbi_image_free(data);
 	}
 
 	data = nullptr;
-
 	return texture_id;
 }
-
-
 
 
 int main()
@@ -209,7 +206,6 @@ int main()
 
 
 	glfwMakeContextCurrent(window);
-
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetScrollCallback(window, scroll_callback);
@@ -225,6 +221,9 @@ int main()
 		return -1;
 	}
 
+	// update camera parameters.
+	update_camera_vectors();
+
 	// configure global opengl state
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
@@ -233,6 +232,28 @@ int main()
 	glStencilFunc(GL_NOTEQUAL, 1, 0xff);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
+
+	GLuint cube_floor_vertex_shader_id{ shader::create("C:\\Users\\shihua\\source\\repos\\opengl_demo\\depth_test\\depth_test\\glsl\\stencil_testing_vertex_shader.glsl", shader_type::vertex_shader) };
+	GLuint cube_floor_fragment_shader_id{ shader::create("C:\\Users\\shihua\\source\\repos\\opengl_demo\\depth_test\\depth_test\\glsl\\stencil_testing_fragment_shader.glsl", shader_type::fragment_shader) };
+
+	GLuint cube_floor_program_id{ glCreateProgram() };
+	glAttachShader(cube_floor_program_id, cube_floor_vertex_shader_id);
+	glAttachShader(cube_floor_program_id, cube_floor_fragment_shader_id);
+	glLinkProgram(cube_floor_program_id);
+	glDeleteShader(cube_floor_vertex_shader_id);
+	glDeleteShader(cube_floor_fragment_shader_id);
+	shader::checkout_shader_state(cube_floor_program_id, shader_type::program);
+
+	GLuint edge_vertex_shader_id{ shader::create("C:\\Users\\shihua\\source\\repos\\opengl_demo\\depth_test\\depth_test\\glsl\\edge_vertex_shader.glsl", shader_type::vertex_shader) };
+	GLuint edge_fragment_shader_id{ shader::create("C:\\Users\\shihua\\source\\repos\\opengl_demo\\depth_test\\depth_test\\glsl\\edge_fragment_shader.glsl", shader_type::fragment_shader) };
+
+	GLuint edge_program_id{ glCreateProgram() };
+	glAttachShader(edge_program_id, edge_vertex_shader_id);
+	glAttachShader(edge_program_id, edge_fragment_shader_id);
+	glLinkProgram(edge_program_id);
+	glDeleteShader(edge_vertex_shader_id);
+	glDeleteShader(edge_fragment_shader_id);
+	shader::checkout_shader_state(edge_program_id, shader_type::program);
 
 	const float cube_vertices[]{
 		// positions          // texture Coords
@@ -300,20 +321,18 @@ int main()
 	glBindVertexArray(cube_VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, cube_VBO);
 
-	glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertices), &cube_VBO, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertices), &cube_vertices, GL_STATIC_DRAW);
 
 	GLuint offset{ 0 };
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), reinterpret_cast<void*>(&offset));
 	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), reinterpret_cast<void*>(&offset));
 
 	offset = 3 * sizeof(float);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), reinterpret_cast<void*>(&offset));
 	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), reinterpret_cast<void*>(&offset));
 
-	// restore.
-	glEnableVertexAttribArray(0);
-
-
+	// notice that.
+	glBindVertexArray(0);
 
 	GLuint floor_VAO{};
 	GLuint floor_VBO{};
@@ -324,37 +343,20 @@ int main()
 	glBindVertexArray(floor_VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, floor_VBO);
 
+
 	glBufferData(GL_ARRAY_BUFFER, sizeof(floor_vertices), &floor_vertices, GL_STATIC_DRAW);
 
 	offset = 0;
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), reinterpret_cast<void*>(offset));
 	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), reinterpret_cast<void*>(offset));
 
 	offset = 3 * sizeof(float);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), reinterpret_cast<void*>(offset));
 	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), reinterpret_cast<void*>(offset));
 
 	// notice that
-	glEnableVertexAttribArray(0);
+	glBindVertexArray(0);
 
-
-	GLuint cube_floor_vertex_shader_id{ shader::create("C:\\Users\\shihua\\source\\repos\\opengl_demo\\depth_test\\depth_test\\glsl\\stencil_testing_vertex_shader.glsl", shader_type::vertex_shader) };
-	GLuint cube_floor_fragment_shader_id{ shader::create("C:\\Users\\shihua\\source\\repos\\opengl_demo\\depth_test\\depth_test\\glsl\\stencil_testing_fragment_shader.glsl", shader_type::fragment_shader) };
-
-	GLuint cube_floor_program_id{ glCreateProgram() };
-	glAttachShader(cube_floor_program_id, cube_floor_vertex_shader_id);
-	glAttachShader(cube_floor_program_id, cube_floor_vertex_shader_id);
-	glLinkProgram(cube_floor_program_id);
-	shader::checkout_shader_state(cube_floor_program_id, shader_type::program);
-
-	GLuint edge_vertex_shader_id{ shader::create("C:\\Users\\shihua\\source\\repos\\opengl_demo\\depth_test\\depth_test\\glsl\\edge_vertex_shader.glsl", shader_type::vertex_shader) };
-	GLuint edge_fragment_shader_id{ shader::create("C:\\Users\\shihua\\source\\repos\\opengl_demo\\depth_test\\depth_test\\glsl\\edge_fragment_shader.glsl", shader_type::fragment_shader) };
-
-	GLuint edge_program_id{ glCreateProgram() };
-	glAttachShader(edge_program_id, edge_vertex_shader_id);
-	glAttachShader(edge_program_id, edge_fragment_shader_id);
-	glLinkProgram(edge_program_id);
-	shader::checkout_shader_state(edge_program_id, shader_type::program);
 
 
 	GLuint wall_texture_id{ load_texture("C:\\Users\\shihua\\source\\repos\\opengl_demo\\depth_test\\depth_test\\image\\marble.jpg") };
@@ -370,7 +372,9 @@ int main()
 		delta_time = current_time - last_frame;
 		last_frame = current_time;
 
-		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+		process_input(window);
+
+		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 		glUseProgram(edge_program_id);
@@ -390,8 +394,10 @@ int main()
 		glBindVertexArray(floor_VAO);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, floor_texture_id);
+		model = glm::mat4{ 1.0f };
 		shader::set_mat4(cube_floor_program_id, "model", model);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
+
 		glBindVertexArray(0);
 
 		// 1------------------------------------------
@@ -401,7 +407,7 @@ int main()
 
 		glBindVertexArray(cube_VAO);
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, cube_texture_id);
+		glBindTexture(GL_TEXTURE_2D, wall_texture_id);
 
 		// draw fire cube.
 		model = glm::mat4{ 1.0f };
@@ -418,31 +424,31 @@ int main()
 
 
 
-		// 2------------------------------------------------------
-		// draw slightly scaled cubes
-		glStencilFunc(GL_NOTEQUAL, 1, 0xff);
-		glStencilMask(0x00);
-		glDisable(GL_DEPTH_TEST);
-		glUseProgram(edge_program_id);
-		float scale{ 1.1f };
+		//// 2------------------------------------------------------
+		//// draw slightly scaled cubes
+		//glStencilFunc(GL_NOTEQUAL, 1, 0xff);
+		//glStencilMask(0x00);
+		//glDisable(GL_DEPTH_TEST);
+		//glUseProgram(edge_program_id);
+		//float scale{ 1.1f };
 
-		glBindVertexArray(cube_VAO);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, cube_texture_id);
-		model = glm::mat4{ 1.0f };
-		model = glm::translate(model, glm::vec3{ -1.0f, 0.0f, -1.0f });
-		model = glm::scale(model, glm::vec3(scale, scale, scale));
-		shader::set_mat4(edge_program_id, "model", model);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		//glBindVertexArray(cube_VAO);
+		//glActiveTexture(GL_TEXTURE0);
+		//glBindTexture(GL_TEXTURE_2D, wall_texture_id);
+		//model = glm::mat4{ 1.0f };
+		//model = glm::translate(model, glm::vec3{ -1.0f, 0.0f, -1.0f });
+		//model = glm::scale(model, glm::vec3(scale, scale, scale));
+		//shader::set_mat4(edge_program_id, "model", model);
+		//glDrawArrays(GL_TRIANGLES, 0, 36);
 
-		model = glm::mat4{ 1.0f };
-		model = glm::translate(model, glm::vec3{ 2.0f, 0.0f, 0.0f });
-		model = glm::scale(model, glm::vec3(scale, scale, scale));
-		shader::set_mat4(edge_program_id, "model", model);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-		glBindVertexArray(0);
-		glStencilMask(0xFF);
-		glEnable(GL_DEPTH_TEST);
+		//model = glm::mat4{ 1.0f };
+		//model = glm::translate(model, glm::vec3{ 2.0f, 0.0f, 0.0f });
+		//model = glm::scale(model, glm::vec3(scale, scale, scale));
+		//shader::set_mat4(edge_program_id, "model", model);
+		//glDrawArrays(GL_TRIANGLES, 0, 36);
+		//glBindVertexArray(0);
+		//glStencilMask(0xFF);
+		//glEnable(GL_DEPTH_TEST);
 
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
@@ -453,6 +459,10 @@ int main()
 
 	// glfw: terminate, clearing all previously allocated GLFW resources.
 	// ------------------------------------------------------------------
+	glDeleteVertexArrays(1, &cube_VAO);
+	glDeleteVertexArrays(1, &floor_VAO);
+	glDeleteBuffers(1, &cube_VBO);
+	glDeleteBuffers(1, &floor_VBO);
 	glfwTerminate();
 	return 0;
 }
