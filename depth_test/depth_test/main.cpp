@@ -13,8 +13,8 @@
 #include "shader.hpp"
 #include "stb_image/stb_image.h"
 
-static  const float WIDTH{ 1280 };
-static  const float HEIGHT{ 720 };
+static  const int WIDTH{ 1280 };
+static  const int HEIGHT{ 720 };
 
 // lighting.
 static const glm::vec3 light_pos{ 1.2f, 1.0f, 2.0f };
@@ -176,7 +176,7 @@ static GLuint load_texture(const char * path)
 	}
 	else
 	{
-		std::cout << __FUNCTION__ << "   " << __LINE__ << "Texture failed to load at path : " << path << std::endl;
+		std::cout << __FUNCTION__ << "   " << __LINE__ << "  " << "Texture failed to load at path : " << path << std::endl;
 		stbi_image_free(data);
 	}
 
@@ -255,7 +255,19 @@ int main()
 	glDeleteShader(edge_fragment_shader_id);
 	shader::checkout_shader_state(edge_program_id, shader_type::program);
 
-	const float cube_vertices[]{
+
+	const float floor_vertices[]{
+		// positions          // texture Coords (note we set these higher than 1 (together with GL_REPEAT as texture wrapping mode). this will cause the floor texture to repeat)
+		 5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
+		-5.0f, -0.5f,  5.0f,  0.0f, 0.0f,
+		-5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
+
+		 5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
+		-5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
+		 5.0f, -0.5f, -5.0f,  2.0f, 2.0f
+	};
+
+	float cubes_vertices[]{
 		// positions          // texture Coords
 		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
 		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
@@ -300,17 +312,6 @@ int main()
 		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 	};
 
-	const float floor_vertices[]{
-		// positions          // texture Coords (note we set these higher than 1 (together with GL_REPEAT as texture wrapping mode). this will cause the floor texture to repeat)
-		 5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
-		-5.0f, -0.5f,  5.0f,  0.0f, 0.0f,
-		-5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
-
-		 5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
-		-5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
-		 5.0f, -0.5f, -5.0f,  2.0f, 2.0f
-	};
-
 
 	GLuint cube_VAO{};
 	GLuint cube_VBO{};
@@ -321,15 +322,15 @@ int main()
 	glBindVertexArray(cube_VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, cube_VBO);
 
-	glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertices), &cube_vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cubes_vertices), cubes_vertices, GL_STATIC_DRAW);
 
-	GLuint offset{ 0 };
+	std::size_t offset{ 0 };
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), reinterpret_cast<void*>(&offset));
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), reinterpret_cast<void*>(offset));
 
 	offset = 3 * sizeof(float);
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), reinterpret_cast<void*>(&offset));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), reinterpret_cast<void*>(offset));
 
 	// notice that.
 	glBindVertexArray(0);
@@ -343,8 +344,7 @@ int main()
 	glBindVertexArray(floor_VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, floor_VBO);
 
-
-	glBufferData(GL_ARRAY_BUFFER, sizeof(floor_vertices), &floor_vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(floor_vertices), floor_vertices, GL_STATIC_DRAW);
 
 	offset = 0;
 	glEnableVertexAttribArray(0);
@@ -356,7 +356,6 @@ int main()
 
 	// notice that
 	glBindVertexArray(0);
-
 
 
 	GLuint wall_texture_id{ load_texture("C:\\Users\\shihua\\source\\repos\\opengl_demo\\depth_test\\depth_test\\image\\marble.jpg") };
@@ -380,7 +379,7 @@ int main()
 		glUseProgram(edge_program_id);
 		glm::mat4 model{ 1.0f };
 		glm::mat4 view{ glm::lookAt(camera_pos, camera_pos + camera_front, camera_up) };
-		glm::mat4 projection{ glm::perspective(glm::radians(field_of_view), WIDTH / HEIGHT, 0.1f, 100.0f) };
+		glm::mat4 projection{ glm::perspective(glm::radians(field_of_view), WIDTH*1.0f / HEIGHT * 1.0f, 0.1f, 100.0f) };
 		shader::set_mat4(edge_program_id, "view", view);
 		shader::set_mat4(edge_program_id, "projection", projection);
 
@@ -391,6 +390,7 @@ int main()
 
 		// draw floor by  cube_floor_program.
 		glStencilMask(0x00); // don't write the floor to the stencil buffer
+
 		glBindVertexArray(floor_VAO);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, floor_texture_id);
@@ -409,7 +409,7 @@ int main()
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, wall_texture_id);
 
-		// draw fire cube.
+		// draw first cube.
 		model = glm::mat4{ 1.0f };
 		model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
 		shader::set_mat4(cube_floor_program_id, "model", model);
@@ -420,35 +420,36 @@ int main()
 		model = glm::translate(model, glm::vec3{ 2.0f, 0.0f, 0.0f });
 		shader::set_mat4(cube_floor_program_id, "model", model);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
-		// 1-------------------------------------------------------
+		// 1------------------------------------------------------ -
 
 
 
-		//// 2------------------------------------------------------
-		//// draw slightly scaled cubes
-		//glStencilFunc(GL_NOTEQUAL, 1, 0xff);
-		//glStencilMask(0x00);
-		//glDisable(GL_DEPTH_TEST);
-		//glUseProgram(edge_program_id);
-		//float scale{ 1.1f };
+			// 2------------------------------------------------------
+		// draw slightly scaled cubes
+		glStencilFunc(GL_NOTEQUAL, 1, 0xff);
+		glStencilMask(0x00);
+		glDisable(GL_DEPTH_TEST);
+		glUseProgram(edge_program_id);
+		float scale{ 1.1f };
 
-		//glBindVertexArray(cube_VAO);
-		//glActiveTexture(GL_TEXTURE0);
-		//glBindTexture(GL_TEXTURE_2D, wall_texture_id);
-		//model = glm::mat4{ 1.0f };
-		//model = glm::translate(model, glm::vec3{ -1.0f, 0.0f, -1.0f });
-		//model = glm::scale(model, glm::vec3(scale, scale, scale));
-		//shader::set_mat4(edge_program_id, "model", model);
-		//glDrawArrays(GL_TRIANGLES, 0, 36);
+		glBindVertexArray(cube_VAO);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, wall_texture_id);
+		model = glm::mat4{ 1.0f };
+		model = glm::translate(model, glm::vec3{ -1.0f, 0.0f, -1.0f });
+		model = glm::scale(model, glm::vec3(scale, scale, scale));
+		shader::set_mat4(edge_program_id, "model", model);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
 
-		//model = glm::mat4{ 1.0f };
-		//model = glm::translate(model, glm::vec3{ 2.0f, 0.0f, 0.0f });
-		//model = glm::scale(model, glm::vec3(scale, scale, scale));
-		//shader::set_mat4(edge_program_id, "model", model);
-		//glDrawArrays(GL_TRIANGLES, 0, 36);
-		//glBindVertexArray(0);
-		//glStencilMask(0xFF);
-		//glEnable(GL_DEPTH_TEST);
+		model = glm::mat4{ 1.0f };
+		model = glm::translate(model, glm::vec3{ 2.0f, 0.0f, 0.0f });
+		model = glm::scale(model, glm::vec3(scale, scale, scale));
+		shader::set_mat4(edge_program_id, "model", model);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		glBindVertexArray(0);
+		glStencilMask(0xFF);
+		glEnable(GL_DEPTH_TEST);
 
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
@@ -460,9 +461,9 @@ int main()
 	// glfw: terminate, clearing all previously allocated GLFW resources.
 	// ------------------------------------------------------------------
 	glDeleteVertexArrays(1, &cube_VAO);
-	glDeleteVertexArrays(1, &floor_VAO);
+	//glDeleteVertexArrays(1, &floor_VAO);
 	glDeleteBuffers(1, &cube_VBO);
-	glDeleteBuffers(1, &floor_VBO);
+	//glDeleteBuffers(1, &floor_VBO);
 	glfwTerminate();
 	return 0;
 }
