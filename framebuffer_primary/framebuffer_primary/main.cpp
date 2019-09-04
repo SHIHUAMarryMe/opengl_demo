@@ -7,15 +7,15 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-
+#include <vector>
 #include <atomic>
 #include <iostream>
 
 #include "shader.hpp"
 #include "stb_image/stb_image.h"
 
-static  const int WIDTH{ 1280 };
-static  const int HEIGHT{ 720 };
+static  const int WIDTH{ 800 };
+static  const int HEIGHT{ 600 };
 
 // lighting.
 static const glm::vec3 light_pos{ 1.2f, 1.0f, 2.0f };
@@ -347,6 +347,8 @@ int main()
 	// notice that.
 	glBindVertexArray(0);
 
+
+
 	GLuint floor_VAO{};
 	GLuint floor_VBO{};
 
@@ -369,6 +371,7 @@ int main()
 	// notice that
 	glBindVertexArray(0);
 
+
 	// transparent VAO
 	GLuint quad_VAO{}, quad_VBO{};
 	glGenVertexArrays(1, &quad_VAO);
@@ -381,31 +384,52 @@ int main()
 
 	offset = 0;
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), reinterpret_cast<void*>(offset));
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 4 * sizeof(float), reinterpret_cast<void*>(offset));
 
-	offset = 3 * sizeof(float);
+	offset = 2 * sizeof(float);
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), reinterpret_cast<void*>(offset));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), reinterpret_cast<void*>(offset));
+
+	// notice that.
 	glBindVertexArray(0);
 
 
-	GLuint wall_texture_id{ load_texture("C:\\Users\\shihua\\source\\repos\\opengl_demo\\window_blending\\window_blending\\image\\marble.jpg") };
-	GLuint floor_texture_id{ load_texture("C:\\Users\\shihua\\source\\repos\\opengl_demo\\window_blending\\window_blending\\image\\metal.png") };
-	GLuint window_texture_id{ load_texture("C:\\Users\\shihua\\source\\repos\\opengl_demo\\window_blending\\window_blending\\image\\blending_transparent_window.png") };
-
-
-	std::vector<glm::vec3> windows_locations
-	{
-		glm::vec3(-1.5f, 0.0f, -0.48f),
-		glm::vec3(1.5f, 0.0f, 0.51f),
-		glm::vec3(0.0f, 0.0f, 0.7f),
-		glm::vec3(-0.3f, 0.0f, -2.3f),
-		glm::vec3(0.5f, 0.0f, -0.6f)
-	};
+	GLuint wall_texture_id{ load_texture("C:\\Users\\shihua\\source\\repos\\opengl_demo\\framebuffer_primary\\framebuffer_primary\\image\\container.jpg") };
+	GLuint floor_texture_id{ load_texture("C:\\Users\\shihua\\source\\repos\\opengl_demo\\framebuffer_primary\\framebuffer_primary\\image\\metal.png") };
 
 
 	glUseProgram(program_id);
 	shader::set_int(program_id, "texture_1", 0);
+
+
+	glUseProgram(quad_program_id);
+	shader::set_int(quad_fragment_shader_id, "screen_texture", 0);
+
+	// generate framebuffer.
+	GLuint framebuffer_id{};
+	glGenFramebuffers(1, &framebuffer_id);
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_id);
+
+	GLuint color_texture_buffer_id{};
+	glGenTextures(1, &color_texture_buffer_id);
+	glBindTexture(GL_TEXTURE_2D, color_texture_buffer_id);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WIDTH, HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color_texture_buffer_id, 0);
+
+	GLuint render_buffer_id{};
+	glGenRenderbuffers(1, &render_buffer_id);
+	glBindRenderbuffer(GL_RENDERBUFFER, render_buffer_id);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, WIDTH, HEIGHT); // use a single renderbuffer object for both a depth AND stencil buffer.
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, render_buffer_id); // now actually attach it
+
+		// now that we actually created the framebuffer and added all attachments we want to check if it is actually complete now
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0); // set our defined framebuffer as default.
 
 
 	while (!glfwWindowShouldClose(window))
@@ -416,28 +440,24 @@ int main()
 
 		process_input(window);
 
-		// sort the transparent windows before rendering
-// ---------------------------------------------
-		std::map<float, glm::vec3> sorted;
-		for (std::size_t index = 0; index < windows_locations.size(); ++index)
-		{
-			float distance = glm::length(camera_pos - windows_locations[index]);
-			sorted[distance] = windows_locations[index];
-		}
-
+		// bind to framebuffer and draw scene as we normally would to color texture 
+		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_id);
+		glEnable(GL_DEPTH_TEST); // enable depth testing;
+													// disable depth testing before render screen-space quad.
 
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+
 		glUseProgram(program_id);
-		glm::mat4 projection{ glm::perspective(glm::radians(field_of_view), WIDTH * 1.0f / HEIGHT * 1.0f, 0.1f, 100.0f) };
-		glm::mat4 view{ glm::lookAt(camera_pos, camera_pos + camera_front, camera_up) };
 		glm::mat4 model{ 1.0f };
-		shader::set_mat4(program_id, "projection", projection);
+		glm::mat4 view{ glm::lookAt(camera_pos, camera_pos + camera_front, camera_up) };
+		glm::mat4 projection{ glm::perspective(glm::radians(field_of_view), WIDTH * 1.0f / HEIGHT * 1.0f, 0.1f, 100.0f) };
 		shader::set_mat4(program_id, "view", view);
+		shader::set_mat4(program_id, "projection", projection);
 
 		// cubes
-		glBindVertexArray(cube_VAO);
+		glBindVertexArray(cubes_VAO);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, wall_texture_id);
 		model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
@@ -452,21 +472,23 @@ int main()
 		// floor
 		glBindVertexArray(floor_VAO);
 		glBindTexture(GL_TEXTURE_2D, floor_texture_id);
-		model = glm::mat4(1.0f);
 		shader::set_mat4(program_id, "model", model);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		glBindVertexArray(0);
+
+		// now bind back to default framebuffer and draw a quad plane with the attached framebuffer color texture
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glDisable(GL_DEPTH_TEST); // disable depth test so screen-space quad isn't discarded due to depth test.
+		// clear all relevant buffers
+		glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // set clear color to white (not really necessery actually, since we won't be able to see behind the quad anyways)
+		glClear(GL_COLOR_BUFFER_BIT);
 
 
-		// windows (from furthest to nearest)
-		glBindVertexArray(window_VAO);
-		glBindTexture(GL_TEXTURE_2D, window_texture_id);
-		for (std::map<float, glm::vec3>::reverse_iterator it = sorted.rbegin(); it != sorted.rend(); ++it)
-		{
-			model = glm::mat4(1.0f);
-			model = glm::translate(model, it->second);
-			shader::set_mat4(program_id, "model", model);
-			glDrawArrays(GL_TRIANGLES, 0, 6);
-		}
+		glUseProgram(quad_program_id);
+		glBindVertexArray(quad_VAO);
+		glBindTexture(GL_TEXTURE_2D, color_texture_buffer_id);	// use the color attachment texture as the texture of the quad plane
+		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
@@ -477,12 +499,12 @@ int main()
 
 	// glfw: terminate, clearing all previously allocated GLFW resources.
 	// ------------------------------------------------------------------
-	glDeleteVertexArrays(1, &cube_VAO);
+	glDeleteVertexArrays(1, &cubes_VAO);
 	glDeleteVertexArrays(1, &floor_VAO);
-	glDeleteVertexArrays(1, &window_VAO);
-	glDeleteBuffers(1, &cube_VBO);
+	glDeleteVertexArrays(1, &quad_VAO);
+	glDeleteBuffers(1, &cubes_VBO);
 	glDeleteBuffers(1, &floor_VBO);
-	glDeleteBuffers(1, &window_VBO);
+	glDeleteBuffers(1, &quad_VBO);
 
 	glfwTerminate();
 	return 0;
