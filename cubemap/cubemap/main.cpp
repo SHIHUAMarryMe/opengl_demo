@@ -14,8 +14,8 @@
 #include "shader.hpp"
 #include "stb_image/stb_image.h"
 
-static  const int WIDTH{ 800 };
-static  const int HEIGHT{ 600 };
+static  const int WIDTH{ 1280 };
+static  const int HEIGHT{ 720 };
 
 // lighting.
 static const glm::vec3 light_pos{ 1.2f, 1.0f, 2.0f };
@@ -195,7 +195,7 @@ static GLuint load_texture(const char * path)
 // +Z (front) 
 // -Z (back)
 // -------------------------------------------------------
-static GLuint loadCubemap(std::vector<std::string> faces)
+static GLuint load_cubemap(const std::vector<std::string>& faces)
 {
 	GLuint texture_id{};
 	glGenTextures(1, &texture_id);
@@ -204,7 +204,7 @@ static GLuint loadCubemap(std::vector<std::string> faces)
 	int width{}, height{}, nrChannels{};
 	for (std::size_t index = 0; index < faces.size(); ++index)
 	{
-		unsigned char *data{ stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0) };
+		unsigned char *data{ stbi_load(faces[index].c_str(), &width, &height, &nrChannels, 0) };
 		if (data)
 		{
 			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + index, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
@@ -212,7 +212,7 @@ static GLuint loadCubemap(std::vector<std::string> faces)
 		}
 		else
 		{
-			std::cout << "Cubemap texture failed to load at path: " << faces[i] << std::endl;
+			std::cout << "Cubemap texture failed to load at path: " << faces[index] << std::endl;
 			stbi_image_free(data);
 		}
 	}
@@ -421,11 +421,7 @@ int main()
 
 	offset = 0;
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), reinterpret_cast<void*>(offset));
-
-	offset = 3 * sizeof(float);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), reinterpret_cast<void*>(offset));
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), reinterpret_cast<void*>(offset));
 
 	// notice that
 	glBindVertexArray(0);
@@ -444,7 +440,13 @@ int main()
 		"C:\\Users\\shihua\\source\\repos\\opengl_demo\\cubemap\\cubemap\\image\\skybox\\back.jpg"
 	};
 
+	GLuint skybox_texture_id{ load_cubemap(skybox_textures) };
 
+	glUseProgram(program_id);
+	shader::set_int(program_id, "cube_texture", 0);
+
+	glUseProgram(skybox_program_id);
+	shader::set_int(skybox_program_id, "skybox", 0);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -466,10 +468,30 @@ int main()
 		shader::set_mat4(program_id, "view", view);
 		shader::set_mat4(program_id, "projection", projection);
 
+		//draw cube.
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, wall_texture_id);
+		glBindVertexArray(cube_VAO);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
 
+		//restore
+		glBindVertexArray(cube_VAO);
 
+		// draw skybox as last
+		glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
+		glUseProgram(skybox_program_id);
+		view = glm::mat4{ glm::mat3{glm::lookAt(camera_pos, camera_pos + camera_front, camera_up)} };
+		shader::set_mat4(skybox_program_id, "view", view);
+		shader::set_mat4(skybox_program_id, "projection", projection);
+
+		glBindVertexArray(skybox_VAO);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_texture_id);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		//restore
+		glBindVertexArray(0);
+		glDepthFunc(GL_LESS); // set depth function back to default
 
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
