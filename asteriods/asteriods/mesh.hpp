@@ -179,13 +179,13 @@ public:
 		glEnableVertexAttribArray(2);
 		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(vertex), reinterpret_cast<void*>(offset));
 
-		offset = offsetof(vertex, tangent_);
-		glEnableVertexAttribArray(3);
-		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), reinterpret_cast<void*>(offset));
+		//offset = offsetof(vertex, tangent_);
+		//glEnableVertexAttribArray(3);
+		//glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), reinterpret_cast<void*>(offset));
 
-		offset = offsetof(vertex, bitangent_);
-		glEnableVertexAttribArray(4);
-		glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), reinterpret_cast<void*>(offset));
+		//offset = offsetof(vertex, bitangent_);
+		//glEnableVertexAttribArray(4);
+		//glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), reinterpret_cast<void*>(offset));
 
 		//notice here:
 		glBindVertexArray(0);

@@ -196,14 +196,23 @@ int main()
 	// configure global opengl state
 	glEnable(GL_DEPTH_TEST);
 
-	GLuint vertex_shader_id{ shader::create("C:\\Users\\y\\Documents\\Visual Studio 2017\\Projects\\opengl_demo\\asteriods\\asteriods\\glsl\\vertex_shader.glsl", shader_type::vertex_shader) };
-	GLuint fragment_shader_id{ shader::create("C:\\Users\\y\\Documents\\Visual Studio 2017\\Projects\\opengl_demo\\asteriods\\asteriods\\glsl\\fragment_shader.glsl", shader_type::fragment_shader) };
+	GLuint asteriods_vertex_shader_id{ shader::create("C:\\Users\\y\\Documents\\Visual Studio 2017\\Projects\\opengl_demo\\asteriods\\asteriods\\glsl\\vertex_shader.glsl", shader_type::vertex_shader) };
+	GLuint asteriods_fragment_shader_id{ shader::create("C:\\Users\\y\\Documents\\Visual Studio 2017\\Projects\\opengl_demo\\asteriods\\asteriods\\glsl\\fragment_shader.glsl", shader_type::fragment_shader) };
 
-	GLuint gl_program_id{ glCreateProgram() };
-	glAttachShader(gl_program_id, vertex_shader_id);
-	glAttachShader(gl_program_id, fragment_shader_id);
-	glLinkProgram(gl_program_id);
-	shader::checkout_shader_state(gl_program_id, shader_type::program);
+	GLuint asteriods_gl_program_id{ glCreateProgram() };
+	glAttachShader(asteriods_gl_program_id, asteriods_vertex_shader_id);
+	glAttachShader(asteriods_gl_program_id, asteriods_fragment_shader_id);
+	glLinkProgram(asteriods_gl_program_id);
+	shader::checkout_shader_state(asteriods_gl_program_id, shader_type::program);
+
+
+	GLuint planet_vertex_shader_id{ shader::create("C:\\Users\\y\\Documents\\Visual Studio 2017\\Projects\\opengl_demo\\asteriods\\asteriods\\glsl\\vertex_shader.glsl", shader_type::vertex_shader) };
+	GLuint planet_fragment_shader_id{ shader::create("C:\\Users\\y\\Documents\\Visual Studio 2017\\Projects\\opengl_demo\\asteriods\\asteriods\\glsl\\fragment_shader.glsl", shader_type::fragment_shader) };
+	GLuint planet_gl_program_id{ glCreateProgram() };
+	glAttachShader(planet_fragment_shader_id, planet_vertex_shader_id);
+	glAttachShader(planet_fragment_shader_id, planet_fragment_shader_id);
+
+
 
 	std::unique_ptr<model_loader> loaded_planet{ std::make_unique<model_loader>() };
 	loaded_planet->load_model("C:\\Users\\y\\Documents\\Visual Studio 2017\\Projects\\opengl_demo\\asteriods\\asteriods\\model_file\\planet\\planet.obj");
@@ -252,6 +261,39 @@ int main()
 	}
 
 
+	// configure instanced array
+	GLuint instanced_VBO{};
+	glGenBuffers(1, &instanced_VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, instanced_VBO);
+	glBufferData(GL_ARRAY_BUFFER, amount * sizeof(glm::mat4), model_matrices.get(), GL_STATIC_DRAW);
+
+	const auto& meshes_in_rock{ loaded_rock->get_meshes() };
+	auto rock_meshed_itr{ meshes_in_rock.cbegin() };
+	for (; rock_meshed_itr != meshes_in_rock.cend(); ++rock_meshed_itr)
+	{
+		std::size_t mesh_VAO{ (*rock_meshed_itr)->get_VAO() };
+		glBindVertexArray(mesh_VAO);
+
+		glEnableVertexAttribArray(3);
+		glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), reinterpret_cast<void*>(0));
+
+		glEnableVertexAttribArray(4);
+		glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), reinterpret_cast<void*>(sizeof(glm::mat4)));
+
+		glEnableVertexAttribArray(5);
+		glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), reinterpret_cast<void*>(2 * sizeof(glm::mat4)));
+
+		glEnableVertexAttribArray(6);
+		glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), reinterpret_cast<void*>(3 * sizeof(glm::mat4)));
+
+
+
+		glBindVertexArray(0);
+	}
+
+
+
+
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -259,34 +301,49 @@ int main()
 		delta_time = current_time - last_frame;
 		last_frame = current_time;
 
+
+		// process keyboard events.
+		process_input(window);
+
 		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-		// configure transformation matrices
 		glm::mat4 projection{ glm::perspective(glm::radians(45.0f), (WIDTH / HEIGHT)*1.0f, 1.0f, 100.0f) };
 		glm::mat4 view{ 1.0f }; // make sure to initialize matrix to identity matrix first
 		view = glm::lookAt(camera_pos, camera_pos + camera_front, camera_up);
 
-		glUseProgram(gl_program_id);
-		shader::set_mat4(gl_program_id, "projection", projection);
-		shader::set_mat4(gl_program_id, "view", view);
+		glUseProgram(asteriods_gl_program_id);
+		shader::set_mat4(asteriods_gl_program_id, "projection", projection);
+		shader::set_mat4(asteriods_gl_program_id, "view", view);
 
+		glUseProgram(planet_gl_program_id);
+		shader::set_mat4(planet_gl_program_id, "projection", projection);
+		shader::set_mat4(planet_gl_program_id, "view", view);
+
+		// draw planet
 		glm::mat4 model{ 1.0f };
 		model = glm::translate(model, glm::vec3(0.0f, -3.0f, 0.0f));
 		model = glm::scale(model, glm::vec3(4.0f, 4.0f, 4.0f));
-		shader::set_mat4(gl_program_id, "model", model);
-
-		// render model.
-		loaded_planet->draw(gl_program_id);
+		shader::set_mat4(planet_gl_program_id, "model", model);
+		loaded_planet->draw(planet_gl_program_id);
 
 
-		for (std::size_t index = 0; index < amount; ++index)
+		// draw asteriod
+		glUseProgram(asteriods_gl_program_id);
+		shader::set_int(asteriods_gl_program_id, "texture_diffuse_1", 0);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, loaded_planet->get_loaded_textures()[0].second.id_);
+
+		std::size_t no_meshed_in_asteroid{ loaded_planet->get_loaded_textures().size() };
+		for (auto meshed_in_rock_itr_beg = loaded_planet->get_meshes().cbegin(); 
+			meshed_in_rock_itr_beg != loaded_planet->get_meshes().cend(); ++meshed_in_rock_itr_beg)
 		{
-			shader::set_mat4(gl_program_id, "model", model_matrices[index]);
-			loaded_rock->draw(gl_program_id);
-		}
+			glBindVertexArray((*meshed_in_rock_itr_beg)->get_VAO());
+			glDrawElementsInstanced(GL_TRIANGLES, (*meshed_in_rock_itr_beg)->get_indices().size(), GL_UNSIGNED_INT, 0, amount);
 
+			glBindVertexArray(0);
+		}
 
 
 

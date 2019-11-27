@@ -35,6 +35,17 @@ public:
 	model_loader& operator=(const model_loader&) = delete;
 
 
+	const std::list<std::shared_ptr<mesh>>& get_meshes()const noexcept
+	{
+		return (this->meshes_);
+	}
+
+	const std::vector<std::pair<std::basic_string<char>, texture>>& get_loaded_textures()
+	{
+		return (this->loaded_texture_);
+	}
+
+
 	void load_model(const std::basic_string<char>& model_file)
 	{
 		assert(!model_file.empty());
