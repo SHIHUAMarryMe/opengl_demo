@@ -1,8 +1,9 @@
-#define GLM_FORCE_CXX14
+#define GLM_FORCE_CXX17
 #define GLM_FORCE_INTRINSICS
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -233,8 +234,8 @@ int main()
 	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
 
-	GLuint cube_floor_vertex_shader_id{ shader::create("C:\\Users\\shihua\\source\\repos\\opengl_demo\\depth_test\\depth_test\\glsl\\stencil_testing_vertex_shader.glsl", shader_type::vertex_shader) };
-	GLuint cube_floor_fragment_shader_id{ shader::create("C:\\Users\\shihua\\source\\repos\\opengl_demo\\depth_test\\depth_test\\glsl\\stencil_testing_fragment_shader.glsl", shader_type::fragment_shader) };
+	GLuint cube_floor_vertex_shader_id{ shader::create(R"R(C:\\Users\\87869\\source\\repos\\opengl_demo\\depth_test\\depth_test\\glsl\\stencil_testing_vertex_shader.glsl)R", shader_type::vertex_shader) };
+	GLuint cube_floor_fragment_shader_id{ shader::create(R"R(C:\\Users\\87869\\source\\repos\\opengl_demo\\depth_test\\depth_test\\glsl\\stencil_testing_fragment_shader.glsl)R", shader_type::fragment_shader) };
 
 	GLuint cube_floor_program_id{ glCreateProgram() };
 	glAttachShader(cube_floor_program_id, cube_floor_vertex_shader_id);
@@ -244,8 +245,8 @@ int main()
 	glDeleteShader(cube_floor_fragment_shader_id);
 	shader::checkout_shader_state(cube_floor_program_id, shader_type::program);
 
-	GLuint edge_vertex_shader_id{ shader::create("C:\\Users\\shihua\\source\\repos\\opengl_demo\\depth_test\\depth_test\\glsl\\edge_vertex_shader.glsl", shader_type::vertex_shader) };
-	GLuint edge_fragment_shader_id{ shader::create("C:\\Users\\shihua\\source\\repos\\opengl_demo\\depth_test\\depth_test\\glsl\\edge_fragment_shader.glsl", shader_type::fragment_shader) };
+	GLuint edge_vertex_shader_id{ shader::create(R"R(C:\\Users\\87869\\source\\repos\\opengl_demo\\depth_test\\depth_test\\glsl\\edge_vertex_shader.glsl)R", shader_type::vertex_shader) };
+	GLuint edge_fragment_shader_id{ shader::create(R"R(C:\\Users\\87869\\source\\repos\\opengl_demo\\depth_test\\depth_test\\glsl\\edge_fragment_shader.glsl)R", shader_type::fragment_shader) };
 
 	GLuint edge_program_id{ glCreateProgram() };
 	glAttachShader(edge_program_id, edge_vertex_shader_id);
@@ -358,8 +359,8 @@ int main()
 	glBindVertexArray(0);
 
 
-	GLuint wall_texture_id{ load_texture("C:\\Users\\shihua\\source\\repos\\opengl_demo\\depth_test\\depth_test\\image\\marble.jpg") };
-	GLuint floor_texture_id{ load_texture("C:\\Users\\shihua\\source\\repos\\opengl_demo\\depth_test\\depth_test\\image\\metal.png") };
+	GLuint wall_texture_id{ load_texture("C:\\Users\\87869\\source\\repos\\opengl_demo\\depth_test\\depth_test\\image\\marble.jpg") };
+	GLuint floor_texture_id{ load_texture("C:\\Users\\87869\\source\\repos\\opengl_demo\\depth_test\\depth_test\\image\\metal.png") };
 
 	glUseProgram(cube_floor_program_id);
 	shader::set_int(cube_floor_program_id, "texture_1", 0);
